@@ -15,13 +15,21 @@ The data should be stored in the repo folder, with the following structure:
 pose_annotation
  - data
    - scenes
-     - bytes
-       - annotations.json
-       - images
+     - annotations
+       - bytes
+         - annotations.json
+       - clark
+         - annotations.json
+       - ...
+     - images
+       - bytes
          - 000001.jpg
          - 000002.jpg
          - ...
-     - clark
+       - clark
+         - 000001.jpg
+         - 000002.jpg
+         - ...
        - ...
 
 ```
