@@ -59,6 +59,7 @@ html, body {
 #mapcontainer {
   display: flex;
   flex-grow: 1;
+  flex-direction: column;
 }
 
 #mapcontainer, #annotations {

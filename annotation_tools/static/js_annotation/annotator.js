@@ -320,7 +320,8 @@ class LeafletAnnotation {
 
               // set new marker position and move camera there
               marker.setLatLng(new L.LatLng(new_position.lat, new_position.lng),{draggable:'true'});
-              map.panTo(new L.LatLng(new_position.lat, new_position.lng))
+              // pan to new position
+              // map.panTo(new L.LatLng(new_position.lat, new_position.lng))
             });
             marker.bindTooltip(keypoint_name, {
               className : '',

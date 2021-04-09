@@ -1,9 +1,9 @@
 
 class JRDBAnnotator {
 
-  constructor(leafletClass) {
+  constructor(leafletClassStiched, leafletClassSingle) {
 
-    this.LOAD_ALL_DATA = true;
+    this.LOAD_ALL_DATA = false;
     
     this.frameIdx = 0;
     this.personIdx = 0;
@@ -13,7 +13,7 @@ class JRDBAnnotator {
     this.selectedKeypointIdx = 0;
 
     this.image = new Image;
-    this.image.src = "http://localhost:8008/images/bytes/000003.jpg";
+    this.image.src = "/images/bytes/stiched/000003.jpg";
 
     this.interpolating = false;
     this.interpIdx = -1;
@@ -38,10 +38,14 @@ class JRDBAnnotator {
     this.showVisibility = this.showVisibility.bind(this);
 
     // Initialize annotator
-    this.leaflet = new LeafletAnnotation(leafletClass);
+    this.leaflet = new LeafletAnnotation(leafletClassStiched);
     this.leaflet.create();
 
     this.leaflet.setKeypointModifiedCallback(this.leafletModifedCallback);
+
+    // Initialize annotator
+    this.leaflet_single = new LeafletAnnotation(leafletClassSingle);
+    this.leaflet_single.create();
 
     const self = this;
     this.refreshImage(this.image.src, function() {
@@ -51,8 +55,22 @@ class JRDBAnnotator {
         });
       }, function() {
         console.log("Error getting scene people");
+        alert("ERROR getting people. Check console for details.")
       })
       
+    });
+
+    // Sync maps
+    this.leaflet.leafletMap.on('zoom', function() { 
+      console.log('zoom!');
+      var bounds = self.leaflet.leafletMap.getBounds();
+      self.leaflet_single.leafletMap.fitBounds(bounds);
+    });
+
+    this.leaflet_single.leafletMap.on('zoom', function() { 
+      console.log('zoom!');
+      var bounds = self.leaflet_single.leafletMap.getBounds();
+      self.leaflet.leafletMap.fitBounds(bounds);
     });
 
     // var image = new Image();
@@ -66,7 +84,18 @@ class JRDBAnnotator {
 
   // Callback for when leaflet 
   leafletModifedCallback(modifiedIdx) {
-    let new_keypoints = this.leaflet.getAnnotations()[0].keypoints;
+    let annots = this.leaflet.getAnnotations();
+    let new_keypoints = annots[0].keypoints;
+
+    /*
+    let frame = this.data_single.annotations_list[this.frameIdx];
+    let person = frame.find(a => a['track_id'] == this.trackList[this.trackIdx]);
+    person.keypoints = this.convert_from_stiched(new_keypoints);
+    // this.data_single
+
+    this.leaflet_single.setAnnotations([person],
+                                 this.data.categories, this.keypointIdx);
+    */
     // console.log("Old keypoints: " + this.data.annotations_list[this.frameIdx][this.personIdx].keypoints);
     // console.log("new keypoints: " + new_keypoints);
 
@@ -273,7 +302,7 @@ class JRDBAnnotator {
   }
 
   getNewScenePeople(onSuccess, onFail) {
-    let url =  'http://localhost:8008/jrdb/people/bytes';
+    let url =  '/jrdb/people/bytes';
     var self = this;
     $.ajax({
       url: url,
@@ -324,9 +353,29 @@ class JRDBAnnotator {
 
   setSceneData(data) {
     this.data = data;
+    this.data_single = data;
+    // this.convert_all_from_stiched(this.data_single.annotations_list);
     this.refreshAll();
     this.fillHTMLKeypointsList();
     console.log(data.categories);
+  }
+
+  convert_all_from_stiched(annots_list) {
+    for (var i = 0; i < annots_list.length; i++) {
+      var annots = annots_list[i];
+      for (var j = 0; j < annots.length; j++) {
+        var ann = annots[j];
+        ann.keypoints = this.convert_from_stiched(ann.keypoints);
+      }
+    }
+  }
+
+  convert_from_stiched(kps) {
+    var new_kps = Array.from(kps);
+    for (var k = 0; k < 17; k++) {
+      new_kps[k*3] += 20;
+    }
+    return new_kps;
   }
 
   // <================ Difficulty
@@ -484,9 +533,13 @@ class JRDBAnnotator {
   // }
 
 
-  getImagePath() {
+  getImagePath(view=-1) {
     // console.log(this.data.image_list[this.frameIdx].file_name);
-    return "http://localhost:8008/images/bytes/" +
+    var im_type = "stiched"
+    if (view != -1) {
+      im_type = "view_"+view;
+    }
+    return "http://localhost:8008/images/bytes/" + im_type + "/" +
             this.data.image_list[this.frameIdx].file_name;
             // String(this.currentImageId).padStart(6, '0') + ".jpg";
   }
@@ -496,10 +549,12 @@ class JRDBAnnotator {
     var newImg = new Image;
     let image = this.image;
     let leaflet = this.leaflet;
+    let leaftlet2 = this.leaflet_single;
     newImg.onload = function() {
       image.src = newImg.src;
       // redraw();
       leaflet.setImage(image);
+      leaftlet2.setImage(image);
       if (callback != null) callback();
     }
     newImg.src = imagePath;
