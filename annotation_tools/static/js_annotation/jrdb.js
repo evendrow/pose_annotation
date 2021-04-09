@@ -3,7 +3,7 @@ class JRDBAnnotator {
 
   constructor(leafletClassStiched, leafletClassSingle) {
 
-    this.LOAD_ALL_DATA = false;
+    this.LOAD_ALL_DATA = true;
     
     this.frameIdx = 0;
     this.personIdx = 0;

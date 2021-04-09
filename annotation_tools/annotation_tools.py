@@ -22,7 +22,8 @@ import base64
 import pickle
 from PIL import Image
 
-JRDB_PATH = './data/scenes'
+REPO_DIR = os.path.dirname(os.path.dirname(__file__))
+JRDB_PATH = os.path.join(REPO_DIR, 'data', 'scenes')
 
 def im2json(im):
     """Convert a Numpy array to JSON string"""
@@ -54,7 +55,7 @@ def home():
 
 @app.route('/images/<path:path>')
 def send_js(path):
-  img_path = os.path.join('.'+JRDB_PATH, 'images')
+  img_path = os.path.join(JRDB_PATH, 'images')
   print("PATH: ", img_path)
   return send_from_directory(img_path, path)
 
@@ -111,7 +112,12 @@ def jrdb_people(scene_id):
   scene_path = os.path.join(JRDB_PATH, 'annotations', scene_id)
   annot_path = os.path.join(scene_path, 'annotations.json')
   # annot_path = os.path.join(JRDB_PATH, 'annotations', 'annotations.json')
-  if not os.path.isdir(scene_path) or not os.path.isfile(annot_path):
+  if not os.path.isdir(scene_path):
+    print("path", scene_path, "is not a directory")
+    abort(404)
+
+  if not os.path.isfile(annot_path):
+    print("path", annot_path, "is not a file")
     abort(404)
 
   print('loading annotations in scene', scene_id)
@@ -138,7 +144,12 @@ def edit_jrdb(scene_id):
   scene_path = os.path.join(JRDB_PATH, 'annotations', scene_id)
   annot_path = os.path.join(scene_path, 'annotations.json')
   # annot_path = os.path.join(JRDB_PATH, 'annotations.json')
-  if not os.path.isdir(scene_path) or not os.path.isfile(annot_path):
+  if not os.path.isdir(scene_path):
+    print("path", scene_path, "is not a directory")
+    abort(404)
+
+  if not os.path.isfile(annot_path):
+    print("path", annot_path, "is not a file")
     abort(404)
 
   print('loading annotations in scene', scene_id)
