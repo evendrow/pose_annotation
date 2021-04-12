@@ -3,12 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
+  <link rel="shortcut icon" href="/static/favicon.ico">
+
   <!-- <script src="https://code.jquery.com/jquery.min.js"></script> -->
   <script src="/static/dep/jquery.min.js"></script>
   <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"> -->
   <link rel="stylesheet" href="/static/dep/bootstrap.min.css">
   <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script> -->
-  <script src="/static/dep/popper.js/dist/popper.js"></script>
+  <!-- <script src="/static/dep/popper.js/dist/popper.js"></script> -->
   <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script> -->
   <script src="/static/dep/bootstrap.min.js"></script>
 
@@ -22,13 +24,13 @@
   <link rel="stylesheet" href="/static/dep/leaflet.css" />
   <script src="/static/dep/leaflet.js"></script>
 
-  <script src="Smooth-0.1.7.js"></script>
-  <script src="kalman.min.js"></script>
+  <script src="/static/js_annotation/Smooth-0.1.7.js"></script>
+  <script src="/static/js_annotation/kalman.min.js"></script>
 
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/static/js_annotation/style.css" />
   <!-- <script src="canvas.js"></script> -->
-  <script src="annotator.js"></script>
-  <script src="jrdb.js"></script>
+  <script src="/static/js_annotation/annotator.js"></script>
+  <script src="/static/js_annotation/jrdb.js"></script>
 
   <title>JRDB Annotation</title>
 
@@ -67,67 +69,73 @@
             </div>
           </div>
           <div id="keypoint_info">
-            <div id="selected_keypoint_row" class="row flex_row">
-              <div class="name">
-                Selected:
+            <div id="keypoint_info_warning" style="display: none;">Person Not In Frame</div>
+            <div id="keypoint_info_contents">
+              <div id="selected_keypoint_row" class="row flex_row">
+                <div class="name">
+                  Selected:
+                </div>
+                <div id="selected_keypoint">
+                  <div class="keypoint_color" id="selected_keypoint_color"></div>
+                  <b id="selected_keypoint_name">right_shoulder</b>
+                </div>
               </div>
-              <div id="selected_keypoint">
-                <div class="keypoint_color" id="selected_keypoint_color"></div>
-                <b id="selected_keypoint_name">right_shoulder</b>
+              <div class="row keypoint_label_row">
+
+                <p class="btn_label">Difficulty:</p>
+                <div class="btn-group btn-group-toggle btn-group-sm" data-toggle="buttons">
+                  <label class="btn btn-outline-secondary active">
+                    <input type="radio" name="difficulty" id="diff_easy" autocomplete="off" checked> Easy
+                  </label>
+                  <label class="btn btn-outline-secondary">
+                    <input type="radio" name="difficulty" id="diff_med" autocomplete="off"> Medium
+                  </label>
+                  <label class="btn btn-outline-secondary">
+                    <input type="radio" name="difficulty" id="diff_hard" autocomplete="off"> Hard
+                  </label>
+                  <label class="btn btn-outline-secondary">
+                    <input type="radio" name="difficulty" id="diff_impossible" autocomplete="off"> Imp
+                  </label>
+                  <label class="btn btn-outline-secondary">
+                    <input type="radio" name="difficulty" id="diff_na" autocomplete="off"> N/A
+                  </label>
+                </div> 
+
               </div>
-            </div>
-            <div class="row keypoint_label_row">
+              <div class="row keypoint_label_row">
 
-              <p class="btn_label">Difficulty:</p>
-              <div class="btn-group btn-group-toggle btn-group-sm" data-toggle="buttons">
-                <label class="btn btn-outline-secondary active">
-                  <input type="radio" name="difficulty" id="diff_easy" autocomplete="off" checked> Easy
-                </label>
-                <label class="btn btn-outline-secondary">
-                  <input type="radio" name="difficulty" id="diff_med" autocomplete="off"> Medium
-                </label>
-                <label class="btn btn-outline-secondary">
-                  <input type="radio" name="difficulty" id="diff_hard" autocomplete="off"> Hard
-                </label>
-                <label class="btn btn-outline-secondary">
-                  <input type="radio" name="difficulty" id="diff_na" autocomplete="off"> N/A
-                </label>
-              </div> 
+                <p class="btn_label">Visibility:</p>
+                <div class="btn-group btn-group-toggle btn-group-sm" data-toggle="buttons">
+                  <label class="btn btn-outline-secondary active">
+                    <input type="radio" name="visibility" id="vis_visible" autocomplete="off" checked> Visible
+                  </label>
+                  <label class="btn btn-outline-secondary">
+                    <input type="radio" name="visibility" id="vis_occluded" autocomplete="off"> Occluded
+                  </label>
+                  <label class="btn btn-outline-secondary">
+                    <input type="radio" name="visibility" id="vis_na" autocomplete="off"> N/A
+                  </label>
+                </div>
 
-            </div>
-            <div class="row keypoint_label_row">
-
-              <p class="btn_label">Visibility:</p>
-              <div class="btn-group btn-group-toggle btn-group-sm" data-toggle="buttons">
-                <label class="btn btn-outline-secondary active">
-                  <input type="radio" name="visibility" id="vis_visible" autocomplete="off" checked> Visible
-                </label>
-                <label class="btn btn-outline-secondary">
-                  <input type="radio" name="visibility" id="vis_occluded" autocomplete="off"> Occluded
-                </label>
-                <label class="btn btn-outline-secondary">
-                  <input type="radio" name="visibility" id="vis_na" autocomplete="off"> N/A
-                </label>
               </div>
+              <div class="row center_row">
+                
+                <!-- <div class="name">Interpolation:</div> &nbsp;&nbsp;&nbsp;&nbsp; -->
+                
+                <button onclick="interpolate()" id="interpolate_button" class="btn btn-primary btn-sm">
+                  Start Interpolation
+                  <!-- <span class="fa fa-arrow-right fa-md" aria-hidden="true"></span> -->
+                </button>
+                <!-- <button onclick="kalman()" id="kalman_button" class="btn btn-outline-secondary btn-sm"> -->
+                  <!-- Kalman Filter -->
+                <!-- </button> -->
+                &nbsp; &nbsp;
+                <button onclick="do_interpolate()" id="do_interpolate_button" class="btn btn-success btn-sm" style="display: none;">
+                  Interpolate
+                  <!-- <span class="fa fa-arrow-right fa-md" aria-hidden="true"></span> -->
+                </button>
 
-            </div>
-            <div class="row center_row">
-              
-              <!-- <div class="name">Interpolation:</div> &nbsp;&nbsp;&nbsp;&nbsp; -->
-              
-              <button onclick="interpolate()" id="interpolate_button" class="btn btn-primary btn-sm">
-                Start Interpolation
-                <!-- <span class="fa fa-arrow-right fa-md" aria-hidden="true"></span> -->
-              </button>
-              <!-- <button onclick="kalman()" id="kalman_button" class="btn btn-outline-secondary btn-sm"> -->
-                <!-- Kalman Filter -->
-              <!-- </button> -->
-              &nbsp; &nbsp;
-              <button onclick="do_interpolate()" id="do_interpolate_button" class="btn btn-success btn-sm" style="display: none;">
-                Interpolate
-                <!-- <span class="fa fa-arrow-right fa-md" aria-hidden="true"></span> -->
-              </button>
-
+              </div>
             </div>
           </div>
           <div id="keypoint_list">
@@ -211,8 +219,8 @@
 <script id="jsbin-javascript">
 
 
-// let scene = window.location.pathname.split('/').pop()
-// console.log("==> Editing scene with name " + scene);
+let scene = window.location.pathname.split('/').pop()
+console.log("Editing scene with name " + scene);
 
 var jrdb;
 
@@ -236,7 +244,7 @@ window.onload=function(){
   redraw();*/
 
 
-  jrdb = new JRDBAnnotator("map_stiched", "map_single");
+  jrdb = new JRDBAnnotator(scene, "map_stiched", "map_single");
 
   // Perform action when difficulty item is pressed
   $("input[name='difficulty']").bind("change", function() {

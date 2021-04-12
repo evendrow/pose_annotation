@@ -1,7 +1,9 @@
 
 class JRDBAnnotator {
 
-  constructor(leafletClassStiched, leafletClassSingle) {
+  constructor(scene, leafletClassStiched, leafletClassSingle) {
+
+    this.scene = scene
 
     this.LOAD_ALL_DATA = true;
     
@@ -13,7 +15,7 @@ class JRDBAnnotator {
     this.selectedKeypointIdx = 0;
 
     this.image = new Image;
-    this.image.src = "/images/bytes/stiched/000003.jpg";
+    this.image.src = "/data/"+scene+"/images/000003.jpg";
 
     this.interpolating = false;
     this.interpIdx = -1;
@@ -50,6 +52,7 @@ class JRDBAnnotator {
     const self = this;
     this.refreshImage(this.image.src, function() {
       self.getNewScenePeople(function() {
+        console.log("Got list of people.");
         self.getNewSceneData(self.setSceneData, function() {
           console.log("Error getting scene data");
         });
@@ -253,8 +256,16 @@ class JRDBAnnotator {
 
     let frame = this.data.annotations_list[this.frameIdx];
     let person = frame.find(a => a['track_id'] == this.trackList[this.trackIdx]);
-    this.showDifficulty(person.difficulty[idx]);
-    this.showVisibility(person.visibility[idx]);
+    if (person == null) {
+      $('#keypoint_info_warning').show();
+      $('#keypoint_info_contents').hide();
+    } else {
+      $('#keypoint_info_warning').hide();
+      $('#keypoint_info_contents').show();
+      this.showDifficulty(person.difficulty[idx]);
+      this.showVisibility(person.visibility[idx]);  
+    }
+    
   }
 
   applyKalmanFilter(idx) {
@@ -302,7 +313,7 @@ class JRDBAnnotator {
   }
 
   getNewScenePeople(onSuccess, onFail) {
-    let url =  '/jrdb/people/bytes';
+    let url =  '/jrdb/people/' + this.scene;
     var self = this;
     $.ajax({
       url: url,
@@ -334,7 +345,7 @@ class JRDBAnnotator {
   }
 
   getNewSceneData(onSuccess, onFail) {
-    let url =  'http://localhost:8008/jrdb/scene/bytes?keypoint=' + this.keypointIdx;
+    let url =  '/jrdb/scene/'+this.scene+'?keypoint=' + this.keypointIdx;
     if (!this.LOAD_ALL_DATA) {
       url += '&person=' + this.trackList[this.trackIdx];
     }
@@ -382,11 +393,11 @@ class JRDBAnnotator {
 
   // Gets selected difficulty option from buttons
   getDifficulty() {
-    let types = ["diff_easy", "diff_med", "diff_hard", "diff_na"];
+    let types = ["diff_easy", "diff_med", "diff_hard", "diff_imp", "diff_na"];
     let diff_id = $("input[name='difficulty']:checked")[0].id;
     var difficulty = types.indexOf(diff_id);
-    if (difficulty == -1) {
-      difficulty = 3; // N/A
+    if (difficulty == types.length - 1) {
+      difficulty = -1; // N/A
     }
     return difficulty;
   }
@@ -409,7 +420,10 @@ class JRDBAnnotator {
   showDifficulty(d) {
     // sets the difficulty for difficulty id 'd'.
     // d ranges from 0 to 3 with meaning given by the following 'diffs' array
-    let diffs = ["easy", "med", "hard", "na"]; 
+    let diffs = ["easy", "med", "hard", "impossible", "na"]; 
+    if (d == -1) {
+      d = diffs.length-1;
+    }
     $("input[name='difficulty']").parent('.btn').removeClass('active');
     $("input[name='difficulty']").parent('.btn').prop('checked', false);
     $("#diff_"+diffs[d]).parent('.btn').addClass('active');
@@ -423,8 +437,8 @@ class JRDBAnnotator {
     let types = ["vis_visible", "vis_occluded", "vis_na"];
     let vis_id = $("input[name='visibility']:checked")[0].id;
     var visibility = types.indexOf(vis_id);
-    if (visibility == -1) {
-      visibility = 2; // N/A
+    if (visibility == types.length - 1) {
+      visibility = -1; // N/A
     }
     return visibility;
   }
@@ -448,6 +462,9 @@ class JRDBAnnotator {
     // sets the visibility for visibility id 'v'.
     // v ranges from 0 to 2 with meaning given by the following 'vis' array
     let vis = ["visible", "occluded", "na"]; 
+    if (v == -1) {
+      v = vis.length-1;
+    }
     $("input[name='visibility']").parent('.btn').removeClass('active');
     $("input[name='visibility']").parent('.btn').prop('checked', false);
     $("#vis_"+vis[v]).parent('.btn').addClass('active');
@@ -511,7 +528,7 @@ class JRDBAnnotator {
 
   getDataForImage(id, onSuccess, onFail) {
     $.ajax({
-      url : 'http://localhost:8008/edit_image/'+id,
+      url : '/edit_image/'+id,
       method : 'GET'
     }).done(function(data){
       onSuccess(data);
@@ -535,11 +552,11 @@ class JRDBAnnotator {
 
   getImagePath(view=-1) {
     // console.log(this.data.image_list[this.frameIdx].file_name);
-    var im_type = "stiched"
+    var im_type = "images"
     if (view != -1) {
-      im_type = "view_"+view;
+      im_type = "images_"+view;
     }
-    return "http://localhost:8008/images/bytes/" + im_type + "/" +
+    return "/data/" + this.scene + "/" + im_type + "/" +
             this.data.image_list[this.frameIdx].file_name;
             // String(this.currentImageId).padStart(6, '0') + ".jpg";
   }

@@ -25,6 +25,54 @@ from PIL import Image
 REPO_DIR = os.path.dirname(os.path.dirname(__file__))
 JRDB_PATH = os.path.join(REPO_DIR, 'data', 'scenes')
 
+CATEGORIES = [
+  {
+    "supercategory": "person", 
+    "skeleton": [
+      [ 16, 14 ], 
+      [ 14, 12 ], 
+      [ 17, 15 ],  
+      [ 15, 13 ], 
+      [ 12, 13 ], 
+      [ 6, 12 ], 
+      [ 7, 13 ], 
+      [ 6, 7 ], 
+      [ 6, 8 ], 
+      [ 7, 9 ], 
+      [ 8, 10 ], 
+      [ 9, 11 ], 
+      [ 2, 3 ], 
+      [ 1, 2 ], 
+      [ 1, 3 ], 
+      [ 2, 4 ], 
+      [ 3, 5 ], 
+      [ 4, 6 ], 
+      [ 5, 7 ]
+    ], 
+    "id": 1, 
+    "keypoints": [
+      "nose", 
+      "left_eye", 
+      "right_eye", 
+      "left_ear", 
+      "right_ear", 
+      "left_shoulder", 
+      "right_shoulder", 
+      "left_elbow", 
+      "right_elbow", 
+      "left_wrist", 
+      "right_wrist", 
+      "left_hip", 
+      "right_hip", 
+      "left_knee", 
+      "right_knee", 
+      "left_ankle", 
+      "right_ankle"
+    ], 
+    "name": "person"
+  }
+]
+
 def im2json(im):
     """Convert a Numpy array to JSON string"""
     imdata = pickle.dumps(im)
@@ -34,30 +82,34 @@ def im2json(im):
 
 app = Flask(__name__)
 #app.config.from_object('annotation_tools.default_config')
-app.config['MONGO_URI'] = 'mongodb://'+cfg.MONGO_HOST+':'+str(cfg.MONGO_PORT)+'/'+cfg.MONGO_DBNAME
+# app.config['MONGO_URI'] = 'mongodb://'+cfg.MONGO_HOST+':'+str(cfg.MONGO_PORT)+'/'+cfg.MONGO_DBNAME
 
-if 'VAT_CONFIG' in os.environ:
-  app.config.from_envvar('VAT_CONFIG')
-mongo = PyMongo(app)
+# if 'VAT_CONFIG' in os.environ:
+  # app.config.from_envvar('VAT_CONFIG')
+# mongo = PyMongo(app)
 
-def get_db():
-  """ Return a handle to the database
-  """
-  with app.app_context():
-    db = mongo.db
-    return db
+# def get_db():
+  # """ Return a handle to the database
+  # """
+  # with app.app_context():
+    # db = mongo.db
+    # return db
 
 ############### Dataset Utilities ###############
 
 @app.route('/')
 def home():
-  return render_template('layout.html')
+  return render_template('sceneselect.html')
 
 @app.route('/images/<path:path>')
 def send_js(path):
   img_path = os.path.join(JRDB_PATH, 'images')
   print("PATH: ", img_path)
   return send_from_directory(img_path, path)
+
+@app.route('/data/<path:path>')
+def send_jrdb(path):
+  return send_from_directory(JRDB_PATH, path)
 
 
 @app.route('/edit_image/<image_id>')
@@ -107,9 +159,22 @@ def edit_image(image_id):
     return render_template('edit_image.html', image=image, annotations=annotations, categories=categories)
 
 
+@app.route('/jrdb/getscenes')
+def get_scenes():
+  scenes = os.listdir(JRDB_PATH)
+  scenes = [s for s in scenes if os.path.isdir(os.path.join(JRDB_PATH, s))]
+  return jsonify({
+    'scenes' : scenes
+  })
+
+
+@app.route('/edit/<scene_id>')
+def edit_scene(scene_id):
+  return render_template('edit.html')
+
 @app.route('/jrdb/people/<scene_id>')
 def jrdb_people(scene_id):
-  scene_path = os.path.join(JRDB_PATH, 'annotations', scene_id)
+  scene_path = os.path.join(JRDB_PATH, scene_id)
   annot_path = os.path.join(scene_path, 'annotations.json')
   # annot_path = os.path.join(JRDB_PATH, 'annotations', 'annotations.json')
   if not os.path.isdir(scene_path):
@@ -135,13 +200,10 @@ def jrdb_people(scene_id):
 
 @app.route('/jrdb/scene/<scene_id>')
 def edit_jrdb(scene_id):
-  """ Edit a single image.
+  """ Edit a single scene.
   """
 
-  
-
-
-  scene_path = os.path.join(JRDB_PATH, 'annotations', scene_id)
+  scene_path = os.path.join(JRDB_PATH, scene_id)
   annot_path = os.path.join(scene_path, 'annotations.json')
   # annot_path = os.path.join(JRDB_PATH, 'annotations.json')
   if not os.path.isdir(scene_path):
@@ -157,7 +219,7 @@ def edit_jrdb(scene_id):
     dataset = json.load(f)
     print('... done')
 
-    categories = dataset['categories']
+    categories = CATEGORIES # dataset['categories']
     if len(categories) > 0:
         # Ensure that the category ids are strings
       for cat in categories:
@@ -216,10 +278,10 @@ def edit_jrdb(scene_id):
 
       if 'difficulty' not in anno:
         # 3 = N/A
-        anno['difficulty'] = [3]*len(categories[0]['keypoints'])
+        anno['difficulty'] = [-1]*len(categories[0]['keypoints'])
       if 'visibility' not in anno:
         # 2 = N/A
-        anno['visibility'] = [2]*len(categories[0]['keypoints'])
+        anno['visibility'] = [-1]*len(categories[0]['keypoints'])
 
         # for pidx in range(0, len(anno['keypoints']), 3):
         #   x, y = anno['keypoints'][pidx:pidx+2]
@@ -297,53 +359,6 @@ def edit_jrdb(scene_id):
   })
 
 
-@app.route('/edit_task/')
-def edit_task():
-  """ Edit a group of images.
-  """
-
-  if 'image_ids' in request.args:
-
-    image_ids = request.args['image_ids'].split(',')
-
-  else:
-
-    start=0
-    if 'start' in request.args:
-      start = int(request.args['start'])
-    end=None
-    if 'end' in request.args:
-      end = int(request.args['end'])
-
-    # Find annotations and their accompanying images for this category
-    if 'category_id' in request.args:
-      category_id = request.args['category_id']
-      annos = mongo.db.annotation.find({ "category_id" : category_id}, projection={'image_id' : True, '_id' : False})#.sort([('image_id', 1)])
-      image_ids = list(set([anno['image_id'] for anno in annos]))
-      image_ids.sort()
-
-    # Else just grab all of the images.
-    else:
-      images = mongo.db.image.find(projection={'id' : True, '_id' : False}).sort([('id', 1)])
-      image_ids = [image['id'] for image in images]
-
-    if end is None:
-      image_ids = image_ids[start:]
-    else:
-      image_ids = image_ids[start:end]
-
-    if 'randomize' in request.args:
-      if request.args['randomize'] >= 1:
-        random.shuffle(image_ids)
-
-  categories = list(mongo.db.category.find(projection={'_id' : False}))
-
-  return render_template('edit_task.html',
-    task_id=1,
-    image_ids=image_ids,
-    categories=categories,
-  )
-
 @app.route('/annotations/save', methods=['POST'])
 def save_annotations():
   """ Save the annotations. This will overwrite annotations.
@@ -385,7 +400,7 @@ def save_annotations_many():
   annotations_list = json_util.loads(json.dumps(request.json['annotations_list']))
   scene_id = 'bytes'
 
-  scene_path = os.path.join(JRDB_PATH, 'annotations', scene_id)
+  scene_path = os.path.join(JRDB_PATH, scene_id)
   annot_path = os.path.join(scene_path, 'annotations.json')
   # annot_path = os.path.join(JRDB_PATH, 'annotations.json')
 
