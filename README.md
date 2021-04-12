@@ -14,20 +14,24 @@ The data should be stored in the repo folder, with the following structure:
 ```
 pose_annotation
  - data
-   - scenes
-     - forbes-cafe-2019-01-22_0
-       - annotations.json
-       - images
+   - images
+     -  image_stiched
+       - forbes-cafe-2019-01-22_0
          - 000001.jpg
          - 000002.jpg
          - ...
-     - gates-basement-elevators-2019-01-17_1
-       - annotations.json
-       - images
-         - 000001.jpg
-         - 000002.jpg
-         - ...
-     - ...
+       - gates-basement-elevators-2019-01-17_1
+         - images
+           - 000001.jpg
+           - 000002.jpg
+           - ...
+   - keypoints
+     - keypoints_2d_stiched
+       - forbes-cafe-2019-01-22_0
+         - annotations.json
+       - gates-basement-elevators-2019-01-17_1
+         - annotations.json
+       - ...
 
 ```
 In the above example, `forbes-cafe-2019-01-22_0` is one scene which is being annotated. The file `annotations.json` stores 2d keypoint annotations in the COCO format.
