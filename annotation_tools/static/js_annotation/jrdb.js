@@ -14,6 +14,8 @@ class JRDBAnnotator {
     this.keypointIdx = -1;
     this.selectedKeypointIdx = 0;
 
+    this.copiedPoints = null;
+
     this.image = new Image;
     this.image.src = "/images/image_stiched/"+scene+"/000003.jpg";
 
@@ -232,6 +234,28 @@ class JRDBAnnotator {
 
     console.log("interpolation done! refreshing...");
     this.refreshAll();
+  }
+
+  performCopy() {
+    let frame = this.data.annotations_list[this.frameIdx];
+    let person = frame.find(a => a['track_id'] == this.trackList[this.trackIdx]);
+    if (person != null) {
+      this.copiedPoints = person.keypoints.map((x) => x); // clone
+    }
+  }
+
+  performPaste() {
+    if (this.copiedPoints == null) {
+      alert('Nothing copied.');
+    } else {
+      let frame = this.data.annotations_list[this.frameIdx];
+      let person = frame.find(a => a['track_id'] == this.trackList[this.trackIdx]);
+      if (person != null) {
+        // set contents to a clone of the copies points
+        person.keypoints = this.copiedPoints.map((x) => x);
+        this.refreshAll(); 
+      }
+    }
   }
 
   setKeypointIdx(idx) {
