@@ -15,7 +15,7 @@ class JRDBAnnotator {
     this.selectedKeypointIdx = 0;
 
     this.image = new Image;
-    this.image.src = "/data/"+scene+"/images/000003.jpg";
+    this.image.src = "/images/image_stiched/"+scene+"/000003.jpg";
 
     this.interpolating = false;
     this.interpIdx = -1;
@@ -332,7 +332,7 @@ class JRDBAnnotator {
   performSave(onSuccess, onFail){
     console.log("saving annotations...");
     $.ajax({
-      url : "/annotations/savemany",
+      url : "/annotations/savemany/"+this.scene,
       method : 'POST',
       data : JSON.stringify({'annotations_list' : this.data.annotations_list}),
       contentType: 'application/json'
@@ -552,11 +552,11 @@ class JRDBAnnotator {
 
   getImagePath(view=-1) {
     // console.log(this.data.image_list[this.frameIdx].file_name);
-    var im_type = "images"
+    var im_type = "image_stiched"
     if (view != -1) {
       im_type = "images_"+view;
     }
-    return "/data/" + this.scene + "/" + im_type + "/" +
+    return "/images/"  + im_type + "/" + this.scene + "/" +
             this.data.image_list[this.frameIdx].file_name;
             // String(this.currentImageId).padStart(6, '0') + ".jpg";
   }

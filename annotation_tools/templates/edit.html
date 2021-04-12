@@ -135,6 +135,12 @@
                   <!-- <span class="fa fa-arrow-right fa-md" aria-hidden="true"></span> -->
                 </button>
 
+                <!-- &nbsp; &nbsp; -->
+
+                <!-- <button onclick="do_copy()" id="copy_button" class="btn btn-secondary btn-sm"><i class="fas fa-copy"></i> Copy</button> -->
+                <!-- &nbsp; &nbsp; -->
+                <!-- <button onclick="do_paste()" id="paste_button" class="btn btn-secondary btn-sm"><i class="fas fa-paste"></i> Paste</button> -->
+
               </div>
             </div>
           </div>
@@ -341,6 +347,14 @@ var do_interpolate = function() {
   console.log("Perfoming interpolation...");
   jrdb.performInterpolation();
   interpolate();
+};
+
+var do_copy = function() {
+  jrdb.performCopy();
+};
+
+var do_paste = function() {
+  jrdb.performPaste();
 };
 
 var save = function() {

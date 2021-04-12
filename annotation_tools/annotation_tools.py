@@ -23,7 +23,8 @@ import pickle
 from PIL import Image
 
 REPO_DIR = os.path.dirname(os.path.dirname(__file__))
-JRDB_PATH = os.path.join(REPO_DIR, 'data', 'scenes')
+JRDB_PATH = os.path.join(REPO_DIR, 'data')
+KP_PATH = os.path.join(JRDB_PATH, 'keypoints', 'keypoints_2d_stiched')
 
 CATEGORIES = [
   {
@@ -161,8 +162,8 @@ def edit_image(image_id):
 
 @app.route('/jrdb/getscenes')
 def get_scenes():
-  scenes = os.listdir(JRDB_PATH)
-  scenes = [s for s in scenes if os.path.isdir(os.path.join(JRDB_PATH, s))]
+  scenes = os.listdir(KP_PATH)
+  scenes = [s for s in scenes if os.path.isdir(os.path.join(KP_PATH, s))]
   return jsonify({
     'scenes' : scenes
   })
@@ -174,7 +175,7 @@ def edit_scene(scene_id):
 
 @app.route('/jrdb/people/<scene_id>')
 def jrdb_people(scene_id):
-  scene_path = os.path.join(JRDB_PATH, scene_id)
+  scene_path = os.path.join(KP_PATH, scene_id)
   annot_path = os.path.join(scene_path, 'annotations.json')
   # annot_path = os.path.join(JRDB_PATH, 'annotations', 'annotations.json')
   if not os.path.isdir(scene_path):
@@ -203,7 +204,7 @@ def edit_jrdb(scene_id):
   """ Edit a single scene.
   """
 
-  scene_path = os.path.join(JRDB_PATH, scene_id)
+  scene_path = os.path.join(KP_PATH, scene_id)
   annot_path = os.path.join(scene_path, 'annotations.json')
   # annot_path = os.path.join(JRDB_PATH, 'annotations.json')
   if not os.path.isdir(scene_path):
@@ -392,15 +393,14 @@ def save_annotations():
 
   return ""
 
-@app.route('/annotations/savemany', methods=['POST'])
-def save_annotations_many():
+@app.route('/annotations/savemany/<scene_id>', methods=['POST'])
+def save_annotations_many(scene_id):
   """ Save the annotations. This will overwrite annotations.
   """
   print("saving many annotations")
   annotations_list = json_util.loads(json.dumps(request.json['annotations_list']))
-  scene_id = 'bytes'
 
-  scene_path = os.path.join(JRDB_PATH, scene_id)
+  scene_path = os.path.join(KP_PATH, scene_id)
   annot_path = os.path.join(scene_path, 'annotations.json')
   # annot_path = os.path.join(JRDB_PATH, 'annotations.json')
 
