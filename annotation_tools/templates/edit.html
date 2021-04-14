@@ -38,7 +38,14 @@
 <body>
   <div id="center">
     <div id="container">
-      <h2>Body Keypoint Annotation</h2>
+      <div class="row align-items-end">
+        <div class="col-md-7 offset-md-1">
+          <h2>Body Keypoint Annotation</h2>
+        </div>
+        <div class="col-md-4" id="message_container">
+          <small id="message">(Message)</small>
+        </div>
+      </div>
       <!-- <canvas id="canvas" width=800 height=600></canvas> -->
       <div class="row" id="annotationcontainer">
         <div id="mapcontainer">
@@ -73,11 +80,11 @@
             <div id="keypoint_info_contents">
               <div id="selected_keypoint_row" class="row flex_row">
                 <div class="name">
-                  Selected:
+                  Focused:
                 </div>
                 <div id="selected_keypoint">
                   <div class="keypoint_color" id="selected_keypoint_color"></div>
-                  <b id="selected_keypoint_name">right_shoulder</b>
+                  <b id="selected_keypoint_name">Loading...</b>
                 </div>
               </div>
               <div class="row keypoint_label_row">
@@ -119,9 +126,15 @@
 
               </div>
               <div class="row center_row">
-                <button onclick="do_copy()" id="copy_button" class="btn btn-secondary btn-sm"><i class="fas fa-copy"></i> Copy</button>
+                <div class="btn-group btn-group-sm" role="group">
+                  <button onclick="select_all()" id="paste_button" class="btn btn-outline-secondary btn-sm"><i class="far fa-check-square"></i> All</button>
+                  <button onclick="select_none()" id="paste_button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-times"></i> None</button>
+                </div>
                 &nbsp; &nbsp;
-                <button onclick="do_paste()" id="paste_button" class="btn btn-secondary btn-sm"><i class="fas fa-paste"></i> Paste</button>
+                <div class="btn-group btn-group-sm" role="group">
+                  <button onclick="do_copy()" id="copy_button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-copy"></i> Copy</button>
+                  <button onclick="do_paste()" id="paste_button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-paste"></i> Paste</button>
+                </div>
               </div>
               <div class="row center_row">
                 
@@ -326,6 +339,7 @@ var interpolate = function() {
     $('#interpolate_button').removeClass('btn-danger');
     $('#do_interpolate_button').hide();
     jrdb.fillHTMLKeypointsList();
+    jrdb.endInterpolation();
 
   } else { 
     // Start interpolation
@@ -344,9 +358,20 @@ var interpolate = function() {
 
 var do_interpolate = function() {
   console.log("Perfoming interpolation...");
-  jrdb.performInterpolation();
-  interpolate();
+  // returns true if actually did interpolation
+  if (jrdb.performInterpolation()) {
+    interpolate();  
+  }
+  
 };
+
+var select_all = function() {
+  jrdb.selectAll();
+};
+
+var select_none = function() {
+  jrdb.selectNone();
+}
 
 var do_copy = function() {
   jrdb.performCopy();

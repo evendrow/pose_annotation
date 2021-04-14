@@ -228,6 +228,7 @@ class LeafletAnnotation {
       var layers = {
           'bbox' : null,
           'keypoints' : null,
+          'skeleton' : null
       };
 
         // Add the bounding box
@@ -254,6 +255,7 @@ class LeafletAnnotation {
       // Add the keypoints
       if(annotation.keypoints != 'undefined' && annotation.keypoints != null){
         layers['keypoints'] = [];
+        layers['skeleton'] = [];
 
         // We should just assume that these exist...
         let keypoint_names = null;
@@ -327,6 +329,11 @@ class LeafletAnnotation {
               className : '',
               direction : 'auto'
             });
+
+            marker.on('click', function(event) {
+              self.handleClick(index/3)
+            })
+
             this.addLayer(marker);
 
           }
@@ -334,6 +341,16 @@ class LeafletAnnotation {
           layers['keypoints'].push(marker);
 
         }
+
+        // var pointList = [layers['keypoints'][0].getLatLng(), layers['keypoints'][1].getLatLng()]
+        // var firstpolyline = new L.Polyline(pointList, {
+        //   color: 'red',
+        //   weight: 3,
+        //   opacity: 0.5,
+        //   smoothFactor: 1
+        // });
+        // this.addLayer(firstpolyline);
+        // layers['skeleton'].push(firstpolyline);
 
       }
 
@@ -505,6 +522,17 @@ class LeafletAnnotation {
 
       if (this.keypointModCallback != null) {
         this.keypointModCallback(keypointIdx);
+      }
+    }
+
+    setKeypointClickCallback(callback) {
+      this.keypointClickCallback = callback;
+    }
+
+    handleClick(keypointIdx) {
+      console.log('keypoint ' + keypointIdx + ' clicked.');
+      if (this.keypointClickCallback != null) {
+        this.keypointClickCallback(keypointIdx);
       }
     }
 

@@ -25,11 +25,13 @@ class JRDBAnnotator {
 
     // Bind methods
     this.leafletModifedCallback = this.leafletModifedCallback.bind(this);
+    this.leafletClickCallback = this.leafletClickCallback.bind(this);
     this.getNewScenePeople = this.getNewScenePeople.bind(this);
     this.getNewSceneData = this.getNewSceneData.bind(this);
     this.setSceneData = this.setSceneData.bind(this);
     this.fillHTMLKeypointsList = this.fillHTMLKeypointsList.bind(this);
     this.setSelectedKeypointIdx = this.setSelectedKeypointIdx.bind(this);
+    this.refreshSelection = this.refreshSelection.bind(this);
     
     this.setDifficulty = this.setDifficulty.bind(this);
     this.getDifficulty = this.getDifficulty.bind(this);
@@ -46,6 +48,7 @@ class JRDBAnnotator {
     this.leaflet.create();
 
     this.leaflet.setKeypointModifiedCallback(this.leafletModifedCallback);
+    this.leaflet.setKeypointClickCallback(this.leafletClickCallback);
 
     // Initialize annotator
     this.leaflet_single = new LeafletAnnotation(leafletClassSingle);
@@ -87,6 +90,22 @@ class JRDBAnnotator {
     
   }
 
+  message(msg) {
+    $("#message").html(msg);
+
+    // stop currently running animations, if exist
+    $("#message").stop();
+
+    // Make message text black, then fade to light gray
+    $("#message").css("opacity", 1);
+    setTimeout(function() {
+      $("#message").animate({
+        opacity: 0.3
+      }, 800, "swing");
+    }, 200)
+    
+  }
+
   // Callback for when leaflet 
   leafletModifedCallback(modifiedIdx) {
     let annots = this.leaflet.getAnnotations();
@@ -107,133 +126,233 @@ class JRDBAnnotator {
     if (this.interpolating) {
       // console.log("modified idx " + modifiedIdx);
       // console.log('modified pt: ' + new_keypoints)
-      if (this.interpIdx == -1) {
-        this.interpIdx = modifiedIdx;
-      }
-      if (this.interpIdx == modifiedIdx) {
-        this.addInterpolationPoint([new_keypoints[modifiedIdx*3], new_keypoints[modifiedIdx*3 + 1]]);
-      }
+      let xy = [new_keypoints[modifiedIdx*3], new_keypoints[modifiedIdx*3 + 1]];
+      this.addInterpolationPoint(modifiedIdx, xy);
+    }
+  }
+
+  leafletClickCallback(clickIdx) {
+    let annots = this.leaflet.getAnnotations();
+    let new_keypoints = annots[0].keypoints;
+    if (this.interpolating) {
+      let xy = [new_keypoints[clickIdx*3], new_keypoints[clickIdx*3 + 1]];
+      this.addInterpolationPoint(clickIdx, xy);
+    } else {
+      $("#check_keypoints_id_"+clickIdx)[0].checked = true;
+      this.refreshSelection();
     }
   }
 
   beginInterpolation() {
-    console.log("interpolating...");
+    this.message("Began interpolation...");
     this.interpolating = true;
     this.interpIdx = -1;
     this.interp_gt_list = [];
   }
 
-  addInterpolationPoint(pt) {
+  endInterpolation() {
+    this.interpolating = false;
+  }
+
+  addInterpolationPoint(kp_idx, pt) {
     console.log("Adding point " + pt);
     // First, see if we have this index already
-    let idx = this.interp_gt_list.findIndex(el => el[0] == this.frameIdx);
-    console.log("found match at idx " + idx);
-    if (idx != -1) {
-      this.interp_gt_list[idx][1] = pt[0];
-      this.interp_gt_list[idx][2] = pt[1];
+    let frame_idx = this.interp_gt_list.findIndex(el => el["frame"] == this.frameIdx);
+    console.log("found frame match at idx " + frame_idx);
+    if (frame_idx == -1) {
+      // no mathcing frame found, create new one with this point
+      this.interp_gt_list.push({"frame": this.frameIdx, "kps": []});
+
+      let frame_idx = this.interp_gt_list.length-1;
+      this.interp_gt_list[frame_idx]["kps"].push([kp_idx, pt[0], pt[1]]);
+      this.message("Added new interpolation frame and point.")
+
     } else {
-      this.interp_gt_list.push([this.frameIdx, pt[0], pt[1]]);
+      // matching frame found, try to find matching point
+      let point_idx = this.interp_gt_list[frame_idx]["kps"].findIndex(el => el[0] == kp_idx);
+      console.log("found point match at idx " + point_idx);
+      if (point_idx != -1) {
+        // matching point found, just need to change its x/y
+        this.interp_gt_list[frame_idx]["kps"][point_idx][1] = pt[0];
+        this.interp_gt_list[frame_idx]["kps"][point_idx][2] = pt[1];
+      } else {
+
+        // no matching point found, need to add new point
+        this.interp_gt_list[frame_idx]["kps"].push([kp_idx, pt[0], pt[1]]);
+      }
+      this.message("Added new interpolation point.")
     }
+    console.log(this.interp_gt_list);
+
     this.fillInterpolationList();
   }
 
-  removeInterpolationPoint(idx) {
-    this.interp_gt_list.splice(idx, 1);
-    this.fillInterpolationList();
+  removeInterpolationPoint(frame, idx) {
+    console.log("Looking for frame" + frame);
+    let frame_idx = this.interp_gt_list.findIndex(el => el["frame"] == frame);
+    var interp_frame = this.interp_gt_list[frame_idx]["kps"];
+    if (frame_idx != -1) {
+      let point_idx = interp_frame.findIndex(el => el[0] == idx);
+      interp_frame.splice(point_idx, 1);
+      
+      // Remove frame from interpolation list if it's empty
+      if (interp_frame.length == 0) {
+        console.log("interp frame empty!");
+        this.interp_gt_list.splice(frame_idx, 1);
+      }
+
+      this.fillInterpolationList();
+      this.message("Removed interpolation point.")
+    } else {
+      this.message("Could not find interpolation point.");
+    }
+    
   }
 
   fillInterpolationList() {
-    console.log("filling interp list " + this.interp_gt_list);
+
+    // First, properly sort the list
+    this.interp_gt_list.sort((a, b) => a["frame"] - b["frame"]);
+    for (var i = 0; i < this.interp_gt_list.length; i++) {
+      this.interp_gt_list[i]["kps"].sort((a, b) => a[0] - b[0]);
+    }
+
+    console.log("filling interp list.");
+    console.log(this.interp_gt_list);
+
     var self = this;
-    let color = this.data.categories[0].keypoints_style[this.interpIdx];
     $("#keypoint_list").html("");
 
     for (var i = 0; i < this.interp_gt_list.length; i++) {
-      let key = this.data.categories[0].keypoints[i];
-      let frame = this.interp_gt_list[i][0];
-      let id = "interp_gt_id_"+i;
-      $("#keypoint_list").append(`
-        <div class="row keypoint">
-          <div class="keypoint_color_container">
-            <div class="keypoint_color" style="background-color:`+color+`;"></div>
-          </div>
-          <div class="keypoint_desc">
-            <p>Frame `+frame+`</p>
-          </div>
-          <div class="button">
-            <div class="btn-group btn-group-sm" role="group">
-              <button class="btn btn-sm btn-outline-secondary" id="interp_view_`+id+`">
-                <i class="fas fa-eye"></i>
-                View
-              </button>
-              <button class="btn btn-sm btn-outline-secondary" id="interp_rm_`+id+`">
-                <i class="far fa-trash-alt"></i>
-                Remove
-              </button>
+      let frame = this.interp_gt_list[i]["frame"];
+
+      for (var j = 0; j < this.interp_gt_list[i]["kps"].length; j++) {
+        let kp_idx = this.interp_gt_list[i]["kps"][j][0];
+        let key = this.data.categories[0].keypoints[kp_idx];
+        let color = this.data.categories[0].keypoints_style[kp_idx];
+
+        let id = "interp_gt_id_"+i+"_"+j;
+        $("#keypoint_list").append(`
+          <div class="row keypoint">
+            <div class="keypoint_color_container">
+              <div class="keypoint_color" style="background-color:`+color+`;"></div>
+            </div>
+            <div class="keypoint_desc">
+              <p>Frame `+frame+`, `+key+`</p>
+            </div>
+            <div class="button">
+              <div class="btn-group btn-group-sm" role="group">
+                <button class="btn btn-sm btn-outline-secondary" id="interp_view_`+id+`">
+                  <i class="fas fa-eye"></i>
+                  View
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" id="interp_rm_`+id+`">
+                  <i class="far fa-trash-alt"></i>
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      `);
+        `);
 
-      $("#interp_view_"+id).click(function() {
-        let idx = parseInt(this.id.split("_")[2]);
-        self.frameIdx = frame;
-        self.refreshAll();
-      });
+        $("#interp_view_"+id).click(function() {
+          let idx = parseInt(this.id.split("_")[2], this.id.split("_")[3]);
+          self.frameIdx = frame;
+          self.refreshAll();
+        });
 
-      $("#interp_rm_"+id).click(function() {
-        let idx = parseInt(this.id.split("_")[2]);
-        self.removeInterpolationPoint(idx);
-      });
+        $("#interp_rm_"+id).click(function() {
+          let idx = parseInt(this.id.split("_")[2], this.id.split("_")[3]);
+          self.removeInterpolationPoint(frame, idx);
+        });
+      }
     }
   }
 
   performInterpolation() {
+
+    console.log("Performing interpolation");
+    console.log(this.interp_gt_list.length);
+
+    if (this.interp_gt_list.length != 2) {
+      this.message("Error: Need exactly 2 frames of points to interpolate!");
+      return false;
+    }
+
+    // Sanity check: All frames must have same keypoints
+    let master_kps = this.interp_gt_list[0]["kps"].map(k => k[0]).sort((a, b) => a-b);
+    console.log("Master kps: " + master_kps)
+    for (var i = 1; i < this.interp_gt_list.length; i++) {
+      let kps = this.interp_gt_list[i]["kps"].map(k => k[0]).sort((a, b) => a-b);
+
+      // Make sure array sizes match
+      if (master_kps.length != kps.length) {
+        this.message("Error: Each frame must have same keypoints for interpolation!");
+        return false;
+      }
+
+      // Make sure arrays are identical
+      for (var k = 0; k < master_kps.length; k++) {
+        if (master_kps[k] != kps[k]) {
+          this.message("Error: Each frame must have same keypoints for interpolation!");
+          return false;
+        }
+      }
+
+    }
+
     if (this.interp_gt_list.length >= 2) {
-      // Sort list by index value
-      this.interp_gt_list.sort(function (a, b) {
-        return a[0] - b[0];
-      });
+      // Sort frame and keypoints
+      this.interp_gt_list.sort((a, b) => a["frame"] - b["frame"]);
+      for (var i = 0; i < this.interp_gt_list.length; i++) {
+        this.interp_gt_list[i]["kps"].sort((a, b) => a[0] - b[0]);
+      }
 
-      let startIdx = this.interp_gt_list[0][0];
-      let endIdx = this.interp_gt_list[this.interp_gt_list.length-1][0];
-      console.log("start idx: " + startIdx);
-      console.log("end idx: " + endIdx);
+      for (var i = 0; i < master_kps.length; i++) {
+        let keyIdx = master_kps[i];
 
-      // "before" points from interpolation list
-      var points = this.interp_gt_list.map(function(a) {
-        return [a[1], a[2]];
-      });
+        let startIdx = this.interp_gt_list[0]["frame"];
+        let endIdx = this.interp_gt_list[this.interp_gt_list.length-1]["frame"];
 
-      console.log("points: " + points);
+        // console.log("start idx: " + startIdx);
+        // console.log("end idx: " + endIdx);
 
-      var path = Smooth(points, {
-        method: Smooth.METHOD_CUBIC, 
-        // clip: Smooth.CLIP_PERIODIC, 
-        cubicTension: Smooth.CUBIC_TENSION_CATMULL_ROM,
-        scaleTo: [startIdx, endIdx]
-      });
+        // "before" points from interpolation list
+        var points = this.interp_gt_list.map(function(a) {
+          return [a["kps"][i][1], a["kps"][i][2]];
+        });
 
-      for (var frame = startIdx; frame < endIdx; frame++) {
+        console.log("points: " + points);
 
-        // see if the person exists at this frame
-        let track_id = this.trackList[this.trackIdx];
-        let match_idx = this.data.annotations_list[frame].findIndex(a => a['track_id'] == track_id);
-        console.log('match idx: ' + match_idx);
+        var path = Smooth(points, {
+          method: Smooth.METHOD_CUBIC, 
+          // clip: Smooth.CLIP_PERIODIC, 
+          cubicTension: Smooth.CUBIC_TENSION_CATMULL_ROM,
+          scaleTo: [startIdx, endIdx]
+        });
 
-        if (match_idx > 0) {
+        for (var frame = startIdx; frame < endIdx; frame++) {
 
-          let pt = path(frame);
-          // console.log('point ' + frame + ': ' + pt);
-          let keyIdx = this.interpIdx;
-          this.data.annotations_list[frame][match_idx].keypoints[keyIdx*3] = pt[0];
-          this.data.annotations_list[frame][match_idx].keypoints[keyIdx*3+1] = pt[1];
+          // see if the person exists at this frame
+          let track_id = this.trackList[this.trackIdx];
+          let match_idx = this.data.annotations_list[frame].findIndex(a => a['track_id'] == track_id);
+          // console.log('match idx: ' + match_idx);
+
+          if (match_idx >= 0) {
+
+            let pt = path(frame);
+            // console.log('point ' + frame + ': ' + pt);
+            this.data.annotations_list[frame][match_idx].keypoints[keyIdx*3] = pt[0];
+            this.data.annotations_list[frame][match_idx].keypoints[keyIdx*3+1] = pt[1];
+          }
         }
       }
     }
 
-    console.log("interpolation done! refreshing...");
+    this.message("Did interpolation.");
     this.refreshAll();
+
+    return true;
   }
 
   performCopy() {
@@ -242,6 +361,8 @@ class JRDBAnnotator {
     if (person != null) {
       this.copiedPoints = person.keypoints.map((x) => x); // clone
     }
+
+    this.message("Copied all keypoints.");
   }
 
   performPaste() {
@@ -256,6 +377,8 @@ class JRDBAnnotator {
         this.refreshAll(); 
       }
     }
+
+    this.message("Pasted all keypoints.");
   }
 
   setKeypointIdx(idx) {
@@ -290,6 +413,13 @@ class JRDBAnnotator {
       this.showVisibility(person.visibility[idx]);  
     }
     
+    // uncheck all, except for the selected keypoint
+    let boxes = $('.keypoint_checkbox').children('input');
+    for (var i = 0; i < boxes.length; i++) {
+      boxes[i].checked = (i == idx);
+    }
+
+    this.message("Selected keypoint '"+name+"'.");
   }
 
   applyKalmanFilter(idx) {
@@ -354,7 +484,9 @@ class JRDBAnnotator {
 
 
   performSave(onSuccess, onFail){
+    this.message("Saving...");
     console.log("saving annotations...");
+    var self = this;
     $.ajax({
       url : "/annotations/savemany/"+this.scene,
       method : 'POST',
@@ -362,6 +494,7 @@ class JRDBAnnotator {
       contentType: 'application/json'
     }).done(function(){
       console.log("saved annotations");
+      self.message("Saved!");
       onSuccess();
     }).fail(function(){
       onFail();
@@ -390,8 +523,8 @@ class JRDBAnnotator {
     this.data = data;
     this.data_single = data;
     // this.convert_all_from_stiched(this.data_single.annotations_list);
-    this.refreshAll();
     this.fillHTMLKeypointsList();
+    this.refreshAll();
     console.log(data.categories);
   }
 
@@ -413,6 +546,76 @@ class JRDBAnnotator {
     return new_kps;
   }
 
+  // <================ Selection
+
+  // Sets all keypoints to be selected
+  selectAll() {
+    if (this.interpolating) {
+      // add every keypoint to the interpolation list
+      for (var i = 0; i < this.data.categories[0].keypoints.length; i++) {
+        console.log(i);
+        this.leafletModifedCallback(i);
+      }
+
+      this.message("Added all points in current frame to interpolation.")
+
+    } else {
+      let boxes = $('.keypoint_checkbox').children('input');
+      for (var i = 0; i < boxes.length; i++) {
+        boxes[i].checked = true;
+      }
+
+      this.refreshSelection();
+      this.message("Selected all " + (this.getSelectedIndexes().length) + " keypoints.");
+    }
+  }
+
+  selectNone() {
+    if (this.interpolating) {
+      // Remove every keypoint from the interpolation list
+      for (var i = 0; i < this.data.categories[0].keypoints.length; i++) {
+        this.removeInterpolationPoint(this.frameIdx, i);
+      }
+      this.message("Removed all points in current frame from interpolation.")
+
+    }  else {
+      let boxes = $('.keypoint_checkbox').children('input');
+      for (var i = 0; i < boxes.length; i++) {
+        boxes[i].checked = false;
+      }
+
+      this.refreshSelection();
+      this.message("Selecting no keypoints.");
+    }
+    
+  }
+
+  getSelectedIndexes() {
+    var boxes = $('.keypoint_checkbox').children('input');
+    boxes = boxes.filter(function(i, a) { return a.checked; })
+    let indexes = boxes.map(function(i, a) { 
+      return Number(a.id.split("_").pop()); 
+    });
+    return indexes;
+  }
+
+  refreshSelection() {
+    let selectedIndexes = this.getSelectedIndexes();
+
+    if (selectedIndexes.length == 0) {
+      $('#selected_keypoint_color').css("background-color", "#999");
+      $('#selected_keypoint_name').html("None Selected.");  
+    }
+    if (selectedIndexes.length == 1) {
+      this.setSelectedKeypointIdx(selectedIndexes[0]);
+    } else {
+      $('#selected_keypoint_color').css("background-color", "#999");
+      $('#selected_keypoint_name').html("Various ("+selectedIndexes.length+" keypoints)");  
+    }
+    
+    this.message("Changed selection. Currently selecting " + selectedIndexes.length + " points.")
+  }
+
   // <================ Difficulty
 
   // Gets selected difficulty option from buttons
@@ -430,7 +633,14 @@ class JRDBAnnotator {
   setDifficulty(difficulty) {
     let frame = this.data.annotations_list[this.frameIdx];
     let person = frame.find(a => a['track_id'] == this.trackList[this.trackIdx]);
-    person.difficulty[this.selectedKeypointIdx] = difficulty;
+    
+    var selectedPoints = this.getSelectedIndexes();
+    for (var i = 0; i < selectedPoints.length; i++) {
+      person.difficulty[selectedPoints[i]] = difficulty;  
+    }
+    // person.difficulty[this.selectedKeypointIdx] = difficulty;  
+
+    this.message("Set difficulty for " + selectedPoints.length + " points.");
   }
 
   // When a difficulty option is selected, this method is called 
@@ -471,7 +681,14 @@ class JRDBAnnotator {
   setVisibility(visibility) {
     let frame = this.data.annotations_list[this.frameIdx];
     let person = frame.find(a => a['track_id'] == this.trackList[this.trackIdx]);
-    person.visibility[this.selectedKeypointIdx] = visibility;
+    
+    var selectedPoints = this.getSelectedIndexes();
+    for (var i = 0; i < selectedPoints.length; i++) {
+      person.visibility[selectedPoints[i]] = visibility;  
+    }
+    // person.visibility[this.selectedKeypointIdx] = visibility;
+
+    this.message("Set visibility for " + selectedPoints.length + " points.");
   }
 
   // When a visibility option is selected, this method is called 
@@ -508,6 +725,9 @@ class JRDBAnnotator {
       let id = "keypoints_id_"+i;
       $("#keypoint_list").append(`
         <div class="row keypoint">
+          <div class="form-check keypoint_checkbox">
+            <input class="form-check-input kp_checkbox_input" type="checkbox" value="" id="check_`+id+`">
+          </div>
           <button class="btn btn-sm btn-outline-secondary select_button" id="select_`+id+`">
             <i class="far fa-hand-pointer"></i>
           </button>
@@ -548,6 +768,8 @@ class JRDBAnnotator {
         self.focusOnMarker(idx);
       });
     }
+
+    $(".kp_checkbox_input").bind("change", this.refreshSelection);
   }
 
   getDataForImage(id, onSuccess, onFail) {

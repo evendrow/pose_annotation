@@ -13,7 +13,7 @@ html, body {
   width: 95%;
   max-width: 1200px;
   text-align: center;
-  padding: 20px 30px;
+  padding: 10px 30px 20px;
   background-color: white;
   margin-top: 20px;
   
@@ -24,7 +24,22 @@ html, body {
 #container h2 {
   margin-top: 5px;
   margin-bottom: 15px;
+  font-size: 30px;
   /* font-family: Helvetica; */
+}
+
+#message_container {
+  text-align: right;
+  padding-bottom: 5px;
+}
+
+#message {
+  color: #f00;
+  font-style: italic;
+  font-size: 15px;
+  opacity: 0.3;
+  display: block;
+  line-height: 17px;
 }
 
 #canvas {
@@ -68,7 +83,7 @@ html, body {
 
 
 #annotations {
-  width: 350px;
+  width: 380px;
   height: 600px;
   background-color: #fff;
 
@@ -81,7 +96,7 @@ html, body {
   display: flex;
   flex-direction: row;
   background-color: #f2f3f6;
-  padding: 10px 0px;
+  padding: 8px 0px;
 }
 
 #annotations .person_row {
@@ -130,8 +145,13 @@ html, body {
   background-color: #fff;
 }
 
-.select_button {
+.keypoint_checkbox {
   margin-left: 10px;
+  margin-top: 3px;
+}
+
+.select_button {
+  margin-left: 5px;
 }
 
 .keypoint_color_container {
@@ -159,6 +179,7 @@ html, body {
 .keypoint_desc p {
   margin-top: 3px;
   margin-bottom: 0px;
+  font-size: 14px;
 }
 
 #keypoint_info {

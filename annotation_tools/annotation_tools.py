@@ -102,10 +102,20 @@ app = Flask(__name__)
 def home():
   return render_template('sceneselect.html')
 
-@app.route('/images/<path:filename>')
-def send_js(filename):
+@app.route('/images/<view>/<scene_id>/<path:filename>')
+def send_js(view, scene_id, filename):
   img_path = os.path.join(JRDB_PATH, 'images')
-  print("PATH: ", img_path)
+  if not os.path.isdir(img_path):
+    print("PATH: ", img_path, "is not a path")
+  
+  img_path = os.path.join(img_path, view)
+  if not os.path.isdir(img_path):
+    print("PATH: ", img_path, "is not a path")
+
+  img_path = os.path.join(img_path, scene_id)
+  if not os.path.isdir(img_path):
+    print("PATH: ", img_path, "is not a path")
+
   return send_from_directory(img_path, filename)
 
 @app.route('/data/<path:path>')
