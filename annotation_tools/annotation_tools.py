@@ -294,6 +294,9 @@ def edit_jrdb(scene_id):
         # 2 = N/A
         anno['visibility'] = [-1]*len(categories[0]['keypoints'])
 
+      if 'human_edited' not in anno:
+        anno['human_edited'] = False
+
         # for pidx in range(0, len(anno['keypoints']), 3):
         #   x, y = anno['keypoints'][pidx:pidx+2]
         #   anno['keypoints'][pidx:pidx+2] = [x / image_width, y / image_height]

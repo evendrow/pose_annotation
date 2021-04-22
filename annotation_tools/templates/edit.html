@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="/static/js_annotation/style.css" />
   <!-- <script src="canvas.js"></script> -->
   <script src="/static/js_annotation/annotator.js"></script>
+  <script src="/static/js_annotation/stich.js"></script>
   <script src="/static/js_annotation/jrdb.js"></script>
 
   <title>JRDB Annotation</title>
@@ -49,31 +50,46 @@
       <!-- <canvas id="canvas" width=800 height=600></canvas> -->
       <div class="row" id="annotationcontainer">
         <div id="mapcontainer">
-          <div id="map_stiched" style="width: 100%; height: 600px;"></div>
-          <div id="map_single" style="width: 100%; height: 300px; display: none;"></div>
+          <div id="map_stiched" style="width: 100%; height: 300px;"></div>
+          <div id="map_single" style="width: 100%; height: 300px;"></div>
         </div>
         <div id="annotations">
+          <div id="frame_info">
+            <div class="row person_row">
+              <div class="name"><p><span id="frame_id">Frame <span id="frameNum">0</span></span></p></div>
+              <div class="button">
+                <!-- <button class="btn btn-sm btn-secondary">Focus</button> -->
+                <button type="button" id="human_edit_button" class="btn btn-sm btn-success" onclick="mark_frame_edited()">
+                  <i class="far fa-check-square"></i> Human-Edited
+                </button>
+              </div>
+            </div>
+          </div>
           <div id="person_info">
             <div class="row person_row">
               <div class="name"><p><span id="person_id"><i class="fas fa-spinner fa-pulse"></i> Loading...</span></p></div>
               <div class="button">
                 <!-- <button class="btn btn-sm btn-secondary">Focus</button> -->
-                <div class="btn-group btn-group-sm" role="group">
-                  <button type="button" class="btn btn-outline-secondary" onclick="prev_person()">&larr; Previous</button>
+                <div class="btn-group btn-group-xs" role="group">
+                  <button type="button" class="btn btn-outline-secondary" onclick="focusOnAnnotation()">
+                    <i class="fas fa-expand"></i> 
+                    Zoom
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary" onclick="prev_person()">&larr; Prev</button>
                   <button type="button" class="btn btn-outline-secondary" onclick="next_person()">&rarr; Next</button>
                 </div>
               </div>
             </div>
-            <div class="row person_row">
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="focusOnAnnotation()">
+            <!-- <div class="row person_row">
+              <button type="button" class="btn btn-xs btn-outline-secondary" onclick="focusOnAnnotation()">
                 <i class="fas fa-expand"></i> 
                 Zoom Person
               </button> &nbsp; &nbsp;
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="showAll()">
+              <button type="button" class="btn btn-xs btn-outline-secondary" onclick="showAll()">
                 <i class="fas fa-child"></i>
                 Show All Points
               </button>
-            </div>
+            </div> -->
           </div>
           <div id="keypoint_info">
             <div id="keypoint_info_warning" style="display: none;">Person Not In Frame</div>
@@ -90,7 +106,7 @@
               <div class="row keypoint_label_row">
 
                 <p class="btn_label">Difficulty:</p>
-                <div class="btn-group btn-group-toggle btn-group-sm" data-toggle="buttons">
+                <div class="btn-group btn-group-toggle btn-group-xs" data-toggle="buttons">
                   <label class="btn btn-outline-secondary active">
                     <input type="radio" name="difficulty" id="diff_easy" autocomplete="off" checked> Easy
                   </label>
@@ -112,7 +128,7 @@
               <div class="row keypoint_label_row">
 
                 <p class="btn_label">Visibility:</p>
-                <div class="btn-group btn-group-toggle btn-group-sm" data-toggle="buttons">
+                <div class="btn-group btn-group-toggle btn-group-xs" data-toggle="buttons">
                   <label class="btn btn-outline-secondary active">
                     <input type="radio" name="visibility" id="vis_visible" autocomplete="off" checked> Visible
                   </label>
@@ -131,7 +147,7 @@
                   <button onclick="select_none()" id="paste_button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-times"></i> None</button>
                 </div>
                 &nbsp; &nbsp;
-                <div class="btn-group btn-group-sm" role="group">
+                <div class="btn-group btn-group-xs" role="group">
                   <button onclick="do_copy()" id="copy_button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-copy"></i> Copy</button>
                   <button onclick="do_paste()" id="paste_button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-paste"></i> Paste</button>
                 </div>
@@ -163,7 +179,7 @@
       
       <div id="buttons">
 
-        <p id="frameInfo">Frame: <span id="frameNum">0</span></p>
+        <!-- <p id="frameInfo">Frame: <span id="frameNum">0</span></p> -->
 
         <div class="btn-group btn-group-lg" role="group">
           <button onclick="prev_image(50)" class="btn btn-outline-secondary smaller_btn">
@@ -388,6 +404,10 @@ var save = function() {
   }, function() {
     alert('Save Error!')
   });
+}
+
+var mark_frame_edited = function() {
+  jrdb.toggle_frame_edited();
 }
 
 document.addEventListener('keydown', function (event) {

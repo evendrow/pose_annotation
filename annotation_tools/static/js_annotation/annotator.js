@@ -74,7 +74,7 @@ class LeafletAnnotation {
     this.categoryMap = null;
 
     // We'll use this list to mirror the json annotations
-        this.annotation_layers = [];
+    this.annotation_layers = [];
   }
 
   create() {
@@ -214,43 +214,43 @@ class LeafletAnnotation {
       // console.log("Adding annotation ");
       // console.log(annotation);
 
-    // let imageWidth = this.imageWidth;
-    // let imageHeight = this.imageHeight;
-    let ratio = this.ratio;
+      // let imageWidth = this.imageWidth;
+      // let imageHeight = this.imageHeight;
+      let ratio = this.ratio;
 
-    // Get the category for this instance, we need to access the keypoint information
-    var category = null;
-    if(annotation['category_id'] != 'undefined'){
-          category = this.categoryMap[annotation['category_id']];
-        }
+      // Get the category for this instance, we need to access the keypoint information
+      var category = null;
+      if(annotation['category_id'] != 'undefined'){
+        category = this.categoryMap[annotation['category_id']];
+      }
 
         // Store the layers for this annotation
       var layers = {
-          'bbox' : null,
-          'keypoints' : null,
-          'skeleton' : null
+        'bbox' : null,
+        'keypoints' : null,
+        'skeleton' : null
       };
 
-        // Add the bounding box
-        if(annotation.bbox != 'undefined' && annotation.bbox != null){
+      // Add the bounding box
+      if(annotation.bbox != 'undefined' && annotation.bbox != null){
 
-          let color = COLORS[annotationIndex % COLORS.length];
-          let pathStyle = this.createBBoxPathStyle(color)
+        let color = COLORS[annotationIndex % COLORS.length];
+        let pathStyle = this.createBBoxPathStyle(color)
 
-          // console.log('iamge width: ' + imageWidth);
-          var [x, y, w, h] = annotation.bbox;
-          let x1 = x * ratio; // imageWidth;
-          let y1 = y * ratio; // imageHeight;
-          let x2 = (x + w) * ratio; // imageWidth;
-          let y2 = (y + h) * ratio; // imageHeight;
-          // let bounds = L.latLngBounds(this.leafletMap.unproject([x1, y1], 0), this.leafletMap.unproject([x2, y2], 0));
-          let bounds = L.latLngBounds(this.leafletMap.unproject([x1, y1], 0), this.leafletMap.unproject([x2, y2], 0));
-          let layer = L.rectangle(bounds, pathStyle);
+        // console.log('iamge width: ' + imageWidth);
+        var [x, y, w, h] = annotation.bbox;
+        let x1 = x * ratio; // imageWidth;
+        let y1 = y * ratio; // imageHeight;
+        let x2 = (x + w) * ratio; // imageWidth;
+        let y2 = (y + h) * ratio; // imageHeight;
+        // let bounds = L.latLngBounds(this.leafletMap.unproject([x1, y1], 0), this.leafletMap.unproject([x2, y2], 0));
+        let bounds = L.latLngBounds(this.leafletMap.unproject([x1, y1], 0), this.leafletMap.unproject([x2, y2], 0));
+        let layer = L.rectangle(bounds, pathStyle);
 
-          this.addLayer(layer);
-          layers.bbox = layer;
+        this.addLayer(layer);
+        layers.bbox = layer;
 
-        }
+      }
 
       // Add the keypoints
       if(annotation.keypoints != 'undefined' && annotation.keypoints != null){
@@ -266,14 +266,22 @@ class LeafletAnnotation {
         }
 
         // Render a marker for each keypoint
-        for( var i = 0; i < annotation.keypoints.length / 3; i++){
+        for( var i = 0; i < annotation.keypoints.length / 3; i++) {
+
+          // Don't display "impossible" annotations
+          if (annotation.difficulty != null && annotation.difficulty[i] == 3) {
+            continue;
+          }
 
           let keypoint_name = keypoint_names[i];
           let keypoint_idx = keypointStyleIdx;
 
           if (keypoint_idx == null || keypoint_idx == -1) {
             keypoint_idx = i;
+          } else {
+            keypoint_idx = keypoint_idx[i];
           }
+
           let keypoint_color = keypoint_styles[keypoint_idx];
 
           let index = i * 3;
@@ -382,7 +390,11 @@ class LeafletAnnotation {
 
     // Add the annotations
     for(var i=0; i < annotations.length; i++){
-      this.annotation_layers.push(this.addAnnotation(annotations[i], i, keypointStyleIdx));
+      let style = null;
+      if (keypointStyleIdx != null) {
+        style = keypointStyleIdx[i];
+      }
+      this.annotation_layers.push(this.addAnnotation(annotations[i], i, style));
     }
 
 

@@ -6,6 +6,7 @@ class JRDBAnnotator {
     this.scene = scene
 
     this.LOAD_ALL_DATA = true;
+    this.SHOW_UNSTICHED_VIEW = false;
     
     this.frameIdx = 0;
     this.personIdx = 0;
@@ -54,18 +55,34 @@ class JRDBAnnotator {
     this.leaflet_single = new LeafletAnnotation(leafletClassSingle);
     this.leaflet_single.create();
 
+    if (!this.SHOW_UNSTICHED_VIEW) {
+      $('#'+leafletClassSingle).css('display', 'none');
+      $('#'+leafletClassStiched).css('height', '600px');
+    }
+
+    // Initialize stich
+    this.stich = new JRDB_Stich();
+
+
     const self = this;
     this.refreshImage(this.image.src, function() {
-      self.getNewScenePeople(function() {
-        console.log("Got list of people.");
-        self.getNewSceneData(self.setSceneData, function() {
-          console.log("Error getting scene data");
-        });
+      self.message('Loading stich information...');
+      self.stich.load(self.SHOW_UNSTICHED_VIEW, function() {
+        self.message('Loading people...');
+        self.getNewScenePeople(function() {
+          console.log("Got list of people.");
+          self.message('Loading annotations...');
+          self.getNewSceneData(self.setSceneData, function() {
+            console.log("Error getting scene data");
+          });
+        }, function() {
+          console.log("Error getting scene people");
+          alert("ERROR getting people. Check console for details.");
+        })
       }, function() {
-        console.log("Error getting scene people");
-        alert("ERROR getting people. Check console for details.")
-      })
-      
+        console.log("Error getting stich");
+        alert("ERROR getting stich conversion. Check console for details.")
+      });
     });
 
     // Sync maps
@@ -104,6 +121,12 @@ class JRDBAnnotator {
       }, 800, "swing");
     }, 200)
     
+  }
+
+  get_current_annotation() {
+    let frame = this.data.annotations_list[this.frameIdx];
+    let person = frame.find(a => a['track_id'] == this.trackList[this.trackIdx]);
+    return person;  
   }
 
   // Callback for when leaflet 
@@ -241,12 +264,12 @@ class JRDBAnnotator {
               <p>Frame `+frame+`, `+key+`</p>
             </div>
             <div class="button">
-              <div class="btn-group btn-group-sm" role="group">
-                <button class="btn btn-sm btn-outline-secondary" id="interp_view_`+id+`">
+              <div class="btn-group btn-group-xs" role="group">
+                <button class="btn btn-outline-secondary" id="interp_view_`+id+`">
                   <i class="fas fa-eye"></i>
                   View
                 </button>
-                <button class="btn btn-sm btn-outline-secondary" id="interp_rm_`+id+`">
+                <button class="btn btn-outline-secondary" id="interp_rm_`+id+`">
                   <i class="far fa-trash-alt"></i>
                   Remove
                 </button>
@@ -520,6 +543,7 @@ class JRDBAnnotator {
   }
 
   setSceneData(data) {
+    this.message('Got new annotations.');
     this.data = data;
     this.data_single = data;
     // this.convert_all_from_stiched(this.data_single.annotations_list);
@@ -616,11 +640,30 @@ class JRDBAnnotator {
     this.message("Changed selection. Currently selecting " + selectedIndexes.length + " points.")
   }
 
+  // <================ Human-edited label
+  toggle_frame_edited() {
+    var anno = this.get_current_annotation();
+    anno.human_edited = !anno.human_edited;
+    this.set_ui_frame_edited(anno.human_edited);
+  }
+
+  set_ui_frame_edited(human_edited) {
+    if (human_edited) {
+      $("#human_edit_button").removeClass('btn-danger');
+      $("#human_edit_button").addClass('btn-success');
+      $("#human_edit_button").html('<i class="far fa-check-square"></i> Human-Edited');
+    } else {
+      $("#human_edit_button").removeClass('btn-success');
+      $("#human_edit_button").addClass('btn-danger');
+      $("#human_edit_button").html('<i class="fas fa-times"></i> Not Human-Edited');
+    }
+  }
+
   // <================ Difficulty
 
   // Gets selected difficulty option from buttons
   getDifficulty() {
-    let types = ["diff_easy", "diff_med", "diff_hard", "diff_imp", "diff_na"];
+    let types = ["diff_easy", "diff_med", "diff_hard", "diff_impossible", "diff_na"];
     let diff_id = $("input[name='difficulty']:checked")[0].id;
     var difficulty = types.indexOf(diff_id);
     if (difficulty == types.length - 1) {
@@ -641,6 +684,8 @@ class JRDBAnnotator {
     // person.difficulty[this.selectedKeypointIdx] = difficulty;  
 
     this.message("Set difficulty for " + selectedPoints.length + " points.");
+
+    this.refreshAnnotations();
   }
 
   // When a difficulty option is selected, this method is called 
@@ -728,7 +773,7 @@ class JRDBAnnotator {
           <div class="form-check keypoint_checkbox">
             <input class="form-check-input kp_checkbox_input" type="checkbox" value="" id="check_`+id+`">
           </div>
-          <button class="btn btn-sm btn-outline-secondary select_button" id="select_`+id+`">
+          <button class="btn btn-xs btn-outline-secondary select_button" id="select_`+id+`">
             <i class="far fa-hand-pointer"></i>
           </button>
           <div class="keypoint_color_container">
@@ -738,12 +783,12 @@ class JRDBAnnotator {
             <p>`+key+`</p>
           </div>
           <div class="button">
-            <div class="btn-group btn-group-sm" role="group">
-              <button class="btn btn-sm btn-outline-secondary" id="zoom_`+id+`">
+            <div class="btn-group btn-group-xs" role="group">
+              <button class="btn btn-outline-secondary" id="zoom_`+id+`">
                 <i class="fas fa-compress"></i> 
                 Zoom
               </button>
-              <button class="btn btn-sm btn-outline-secondary" id="isolate_`+id+`">
+              <button class="btn btn-outline-secondary" id="isolate_`+id+`">
                 <i class="far fa-dot-circle"></i>
                 Kalman
               </button>
@@ -796,9 +841,9 @@ class JRDBAnnotator {
   // }
 
 
-  getImagePath(view=-1) {
+  getImagePath(view=-1, im_type="image_stiched") {
     // console.log(this.data.image_list[this.frameIdx].file_name);
-    var im_type = "image_stiched"
+    // var im_type = "image_stiched";
     if (view != -1) {
       im_type = "images_"+view;
     }
@@ -807,17 +852,27 @@ class JRDBAnnotator {
             // String(this.currentImageId).padStart(6, '0') + ".jpg";
   }
 
-  refreshImage(imagePath, callback=null) {
-    // console.log("Loading image with path " + imagePath);
+  refreshImage(imagePath, callback=null, for_leaflet_single=false) {
+    
+    if (for_leaflet_single && !this.SHOW_UNSTICHED_VIEW) {
+      if (callback != null) callback();
+    }
+
     var newImg = new Image;
     let image = this.image;
     let leaflet = this.leaflet;
     let leaftlet2 = this.leaflet_single;
     newImg.onload = function() {
-      image.src = newImg.src;
+      image = newImg;
       // redraw();
-      leaflet.setImage(image);
+
+      if (!for_leaflet_single) {
+        leaflet.setImage(image);
+      }
+      
       leaftlet2.setImage(image);
+      
+      
       if (callback != null) callback();
     }
     newImg.src = imagePath;
@@ -825,7 +880,19 @@ class JRDBAnnotator {
 
   refreshAll(callback=null) {
     this.leaflet.clearAnnotations();
-    this.refreshImage(this.getImagePath(), callback);
+    this.leaflet_single.clearAnnotations();
+
+    var self = this;
+    this.refreshImage(this.getImagePath(), function() {
+      self.refreshImage(self.getImagePath(-1, "rough_stich"), callback, true);
+    });
+
+    this.refreshAnnotations();
+
+    this.setSelectedKeypointIdx(this.selectedKeypointIdx);
+  }
+
+  refreshAnnotations() {
     var leafletAnnots = this.data.annotations_list[this.frameIdx];
     if (leafletAnnots.length > 1) {
       let track_id = this.trackList[this.trackIdx];
@@ -839,11 +906,17 @@ class JRDBAnnotator {
       
     }
     this.leaflet.setAnnotations(leafletAnnots,
-                                 this.data.categories, this.keypointIdx);
+                                 this.data.categories);//, this.keypointIdx);
+
+    if (this.SHOW_UNSTICHED_VIEW) {
+      let result = this.stich.stiched_to_unstiched(leafletAnnots);
+      this.leaflet_single.setAnnotations(result["annotations"], this.data.categories, result["style_idx"]);
+    }
+
     $("#frameNum").html(String(this.frameIdx));
     $("#person_id").html(this.trackList[this.trackIdx]);
 
-    this.setSelectedKeypointIdx(this.selectedKeypointIdx);
+    this.set_ui_frame_edited(leafletAnnots[0].human_edited);
   }
 
   prev_image(delta=1, callback=null) {
