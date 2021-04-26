@@ -16,6 +16,8 @@ class JRDBAnnotator {
     this.selectedKeypointIdx = 0;
 
     this.copiedPoints = null;
+    this.copiedDifficulty = null;
+    this.copiedVisibility = null;
 
     this.image = new Image;
     this.image.src = "/images/image_stiched/"+scene+"/000003.jpg";
@@ -337,6 +339,10 @@ class JRDBAnnotator {
         let startIdx = this.interp_gt_list[0]["frame"];
         let endIdx = this.interp_gt_list[this.interp_gt_list.length-1]["frame"];
 
+        let first_track_id = this.trackList[this.trackIdx];
+        let first_match_idx = this.data.annotations_list[startIdx].findIndex(a => a['track_id'] == first_track_id);
+        let firstFrame = this.data.annotations_list[startIdx][first_match_idx];
+
         // console.log("start idx: " + startIdx);
         // console.log("end idx: " + endIdx);
 
@@ -354,7 +360,7 @@ class JRDBAnnotator {
           scaleTo: [startIdx, endIdx]
         });
 
-        for (var frame = startIdx; frame < endIdx; frame++) {
+        for (var frame = startIdx; frame <= endIdx; frame++) {
 
           // see if the person exists at this frame
           let track_id = this.trackList[this.trackIdx];
@@ -367,6 +373,9 @@ class JRDBAnnotator {
             // console.log('point ' + frame + ': ' + pt);
             this.data.annotations_list[frame][match_idx].keypoints[keyIdx*3] = pt[0];
             this.data.annotations_list[frame][match_idx].keypoints[keyIdx*3+1] = pt[1];
+
+            this.data.annotations_list[frame][match_idx].difficulty[keyIdx] = firstFrame.difficulty[keyIdx];
+            this.data.annotations_list[frame][match_idx].visibility[keyIdx] = firstFrame.visibility[keyIdx];
           }
         }
       }
@@ -383,6 +392,8 @@ class JRDBAnnotator {
     let person = frame.find(a => a['track_id'] == this.trackList[this.trackIdx]);
     if (person != null) {
       this.copiedPoints = person.keypoints.map((x) => x); // clone
+      this.copiedVisibility = person.visibility.map((x) => x); // clone
+      this.copiedDifficulty = person.difficulty.map((x) => x); // clone
     }
 
     this.message("Copied all keypoints.");
@@ -397,6 +408,8 @@ class JRDBAnnotator {
       if (person != null) {
         // set contents to a clone of the copies points
         person.keypoints = this.copiedPoints.map((x) => x);
+        person.difficulty = this.copiedDifficulty.map((x) => x);
+        person.visibility = this.copiedVisibility.map((x) => x);
         this.refreshAll(); 
       }
     }
@@ -917,7 +930,9 @@ class JRDBAnnotator {
     $("#frameNum").html(String(this.frameIdx));
     $("#person_id").html(this.trackList[this.trackIdx]);
 
-    this.set_ui_frame_edited(leafletAnnots[0].human_edited);
+    if (leafletAnnots.length > 0) {
+      this.set_ui_frame_edited(leafletAnnots[0].human_edited);
+    }
   }
 
   prev_image(delta=1, callback=null) {
