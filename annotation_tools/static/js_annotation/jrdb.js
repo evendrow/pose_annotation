@@ -856,6 +856,7 @@ class JRDBAnnotator {
     
     if (for_leaflet_single && !this.SHOW_UNSTICHED_VIEW) {
       if (callback != null) callback();
+      return;
     }
 
     var newImg = new Image;
