@@ -5,7 +5,7 @@ class JRDB_Stich {
     }
 
     load(performLoad, onSuccess, onFailure) {
-        if (!performLoad) onSuccess();
+        if (!performLoad) return onSuccess();
 
         var self = this;
         $.ajax({
