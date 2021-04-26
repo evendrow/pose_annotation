@@ -75,6 +75,8 @@ class LeafletAnnotation {
 
     // We'll use this list to mirror the json annotations
     this.annotation_layers = [];
+
+    this.showingSkeleton = false;
   }
 
   create() {
@@ -204,167 +206,253 @@ class LeafletAnnotation {
 
     }
 
+  clearSkeleton() {
+    for (var a_id = 0; a_id < this.annotation_layers.length; a_id++) {
+      let annotation_layer = this.annotation_layers[a_id];
+      if (annotation_layer.skeleton != 'undefined' && annotation_layer.skeleton != null){
+        for (var i=0; i < annotation_layer.skeleton.length; i++){
+          let layer = annotation_layer.skeleton[i];
+          this.removeLayer(layer);
+        }
+      }
+      annotation_layer.skeleton = [];
+    }
+  }
+
+  drawSkeletonForLayer(layer) {
+
+    let SKELETON = [
+      //head
+      [0, 1, 'red'], // nose - left eye
+      [1, 3, 'red'], // left eye - left ear 
+      [0, 2, 'lime'], // nose - right eye
+      [2, 4, 'lime'], // righ eye - right ear
+
+      // left side
+      [5, 7, 'red'], // left shoulder - left elbow
+      [7, 9, 'red'], // left elbow - left wrist 
+
+      [11, 13, 'magenta'], // left hip - left knee
+      [13, 15, 'magenta'], // left hip - left ankle
+
+      // right side
+      [6, 8, 'lime'], // right shoulder - right elbow
+      [8, 10, 'lime'], // right elbow - right wrist 
+
+      [12, 14, 'cyan'], // right hip - right knee
+      [14, 16, 'cyan'], // right hip - right ankle
+
+      // middle
+
+      [5, 6, 'blue'], // left shoulder - right shoulder
+      [5, 11, 'blue'], // left shoulder - left hip
+      [6, 12, 'blue'], // right shoulder - right hip
+      [11, 12, 'blue'], // left hip - right hip
+    ]
+
+    if (layer['skeleton'] == 'undefined' || layer['skeleton'] == null) {
+      layer['skeleton'] = [];
+    }
+
+    for (var i = 0; i < SKELETON.length; i++) {
+      let line = SKELETON[i];
+      let kp1 = line[0];
+      let kp2 = line[1];
+      let color = line[2];
+
+      if (layer['keypoints'][kp1] == null || layer['keypoints'][kp2] == null) {
+        continue;
+      }
+
+      var pointList = [layer['keypoints'][kp1].getLatLng(), layer['keypoints'][kp2].getLatLng()]
+      var firstpolyline = new L.Polyline(pointList, {
+        color: color,
+        weight: 2,
+        opacity: 0.5,
+        smoothFactor: 1
+      });
+      this.addLayer(firstpolyline);
+
+      layer['skeleton'].push(firstpolyline);
+    }
+    
+  }
+
+  drawSkeleton() {
+
+    this.clearSkeleton();
+
+    for (var a_id = 0; a_id < this.annotation_layers.length; a_id++) {
+      let annotation_layer = this.annotation_layers[a_id];
+      this.drawSkeletonForLayer(annotation_layer);
+    }
+  }
+
+  setShowingSkeleton(showSkeleton) {
+    this.showingSkeleton = showSkeleton;
+    if (showSkeleton) {
+      this.drawSkeleton();
+    } else {
+      this.clearSkeleton();
+    }
+  }
+
   /**
-     * Add an annotation to the image. This will render the bbox and keypoint annotations.
-     * @param {*} annotation
-     * @param {*} annotationIndex
-     */
-    addAnnotation(annotation, annotationIndex, keypointStyleIdx=null) {
+   * Add an annotation to the image. This will render the bbox and keypoint annotations.
+   * @param {*} annotation
+   * @param {*} annotationIndex
+   */
+  addAnnotation(annotation, annotationIndex, keypointStyleIdx=null) {
 
-      // console.log("Adding annotation ");
-      // console.log(annotation);
+    // console.log("Adding annotation ");
+    // console.log(annotation);
 
-      // let imageWidth = this.imageWidth;
-      // let imageHeight = this.imageHeight;
-      let ratio = this.ratio;
+    // let imageWidth = this.imageWidth;
+    // let imageHeight = this.imageHeight;
+    let ratio = this.ratio;
 
-      // Get the category for this instance, we need to access the keypoint information
-      var category = null;
-      if(annotation['category_id'] != 'undefined'){
-        category = this.categoryMap[annotation['category_id']];
-      }
+    // Get the category for this instance, we need to access the keypoint information
+    var category = null;
+    if(annotation['category_id'] != 'undefined'){
+      category = this.categoryMap[annotation['category_id']];
+    }
 
-        // Store the layers for this annotation
-      var layers = {
-        'bbox' : null,
-        'keypoints' : null,
-        'skeleton' : null
-      };
+      // Store the layers for this annotation
+    var layers = {
+      'bbox' : null,
+      'keypoints' : null,
+      'skeleton' : null
+    };
 
-      // Add the bounding box
-      if(annotation.bbox != 'undefined' && annotation.bbox != null){
+    // Add the bounding box
+    if(annotation.bbox != 'undefined' && annotation.bbox != null){
 
-        let color = COLORS[annotationIndex % COLORS.length];
-        let pathStyle = this.createBBoxPathStyle(color)
+      let color = COLORS[annotationIndex % COLORS.length];
+      let pathStyle = this.createBBoxPathStyle(color)
 
-        // console.log('iamge width: ' + imageWidth);
-        var [x, y, w, h] = annotation.bbox;
-        let x1 = x * ratio; // imageWidth;
-        let y1 = y * ratio; // imageHeight;
-        let x2 = (x + w) * ratio; // imageWidth;
-        let y2 = (y + h) * ratio; // imageHeight;
-        // let bounds = L.latLngBounds(this.leafletMap.unproject([x1, y1], 0), this.leafletMap.unproject([x2, y2], 0));
-        let bounds = L.latLngBounds(this.leafletMap.unproject([x1, y1], 0), this.leafletMap.unproject([x2, y2], 0));
-        let layer = L.rectangle(bounds, pathStyle);
+      // console.log('iamge width: ' + imageWidth);
+      var [x, y, w, h] = annotation.bbox;
+      let x1 = x * ratio; // imageWidth;
+      let y1 = y * ratio; // imageHeight;
+      let x2 = (x + w) * ratio; // imageWidth;
+      let y2 = (y + h) * ratio; // imageHeight;
+      // let bounds = L.latLngBounds(this.leafletMap.unproject([x1, y1], 0), this.leafletMap.unproject([x2, y2], 0));
+      let bounds = L.latLngBounds(this.leafletMap.unproject([x1, y1], 0), this.leafletMap.unproject([x2, y2], 0));
+      let layer = L.rectangle(bounds, pathStyle);
 
-        this.addLayer(layer);
-        layers.bbox = layer;
-
-      }
-
-      // Add the keypoints
-      if(annotation.keypoints != 'undefined' && annotation.keypoints != null){
-        layers['keypoints'] = [];
-        layers['skeleton'] = [];
-
-        // We should just assume that these exist...
-        let keypoint_names = null;
-        let keypoint_styles = null;
-        if(category != null){
-          keypoint_names = category['keypoints'];
-          keypoint_styles = category['keypoints_style'];
-        }
-
-        // Render a marker for each keypoint
-        for( var i = 0; i < annotation.keypoints.length / 3; i++) {
-
-          // Don't display "impossible" annotations
-          if (annotation.difficulty != null && annotation.difficulty[i] == 3) {
-            continue;
-          }
-
-          let keypoint_name = keypoint_names[i];
-          let keypoint_idx = keypointStyleIdx;
-
-          if (keypoint_idx == null || keypoint_idx == -1) {
-            keypoint_idx = i;
-          } else {
-            keypoint_idx = keypoint_idx[i];
-          }
-
-          let keypoint_color = keypoint_styles[keypoint_idx];
-
-          let index = i * 3;
-          var x = annotation.keypoints[index];
-          var y = annotation.keypoints[index + 1];
-          var v = annotation.keypoints[index + 2];
-
-          var marker = null;
-          if (v > 0){
-
-            x = x*ratio;// * imageWidth;
-            y = y*ratio;// * imageHeight;
-            let latlng = this.leafletMap.unproject([x,y], 0);
-
-            var markerDiv = new ColorableDivIcon({
-              iconAnchor : [6, 6],
-              popupAnchor : [0, -6],
-              className : 'circle-marker',
-              style : this.createKeypointPathStyle(keypoint_color)
-            });
-            if (v == 1){
-              markerDiv.setBackground(this.createKeypointStripedBackgroundStyle(keypoint_color));
-            }
-
-            // Create marker
-            marker = L.marker(latlng, {icon : markerDiv, draggable: true});
-
-            // Map will "follow" where you drag the marker
-            let map = this.leafletMap;
-            let self = this;
-            marker.on('dragend', function(event){
-              var marker = event.target;
-              var position = marker.getLatLng();
-
-              // Make sure marker remains inside image bounds
-              let pt = self.extractKeypoint(marker);
-              self.setKeypointXY(annotationIndex, index/3, pt[0], pt[1]);
-
-              let new_x = pt[0] * ratio;
-              let new_y = pt[1] * ratio;
-              let new_position = map.unproject([new_x, new_y], 0);
-
-              console.log(new_x);
-              console.log(new_y);
-              console.log(pt[0]);
-
-              // set new marker position and move camera there
-              marker.setLatLng(new L.LatLng(new_position.lat, new_position.lng),{draggable:'true'});
-              // pan to new position
-              // map.panTo(new L.LatLng(new_position.lat, new_position.lng))
-            });
-            marker.bindTooltip(keypoint_name, {
-              className : '',
-              direction : 'auto'
-            });
-
-            marker.on('click', function(event) {
-              self.handleClick(index/3)
-            })
-
-            this.addLayer(marker);
-
-          }
-
-          layers['keypoints'].push(marker);
-
-        }
-
-        // var pointList = [layers['keypoints'][0].getLatLng(), layers['keypoints'][1].getLatLng()]
-        // var firstpolyline = new L.Polyline(pointList, {
-        //   color: 'red',
-        //   weight: 3,
-        //   opacity: 0.5,
-        //   smoothFactor: 1
-        // });
-        // this.addLayer(firstpolyline);
-        // layers['skeleton'].push(firstpolyline);
-
-      }
-
-      return layers;
+      this.addLayer(layer);
+      layers.bbox = layer;
 
     }
+
+    // Add the keypoints
+    if(annotation.keypoints != 'undefined' && annotation.keypoints != null){
+      layers['keypoints'] = [];
+      layers['skeleton'] = [];
+
+      // We should just assume that these exist...
+      let keypoint_names = null;
+      let keypoint_styles = null;
+      if(category != null){
+        keypoint_names = category['keypoints'];
+        keypoint_styles = category['keypoints_style'];
+      }
+
+      // Render a marker for each keypoint
+      for( var i = 0; i < annotation.keypoints.length / 3; i++) {
+
+        // Don't display "impossible" annotations
+        if (annotation.difficulty != null && annotation.difficulty[i] == 3) {
+          layers['keypoints'].push(null);
+          continue;
+        }
+
+        let keypoint_name = keypoint_names[i];
+        let keypoint_idx = keypointStyleIdx;
+
+        if (keypoint_idx == null || keypoint_idx == -1) {
+          keypoint_idx = i;
+        } else {
+          keypoint_idx = keypoint_idx[i];
+        }
+
+        let keypoint_color = keypoint_styles[keypoint_idx];
+
+        let index = i * 3;
+        var x = annotation.keypoints[index];
+        var y = annotation.keypoints[index + 1];
+        var v = annotation.keypoints[index + 2];
+
+        var marker = null;
+        if (v > 0){
+
+          x = x*ratio;// * imageWidth;
+          y = y*ratio;// * imageHeight;
+          let latlng = this.leafletMap.unproject([x,y], 0);
+
+          var markerDiv = new ColorableDivIcon({
+            iconAnchor : [4, 4],
+            popupAnchor : [0, -4],
+            className : 'circle-marker',
+            style : this.createKeypointPathStyle(keypoint_color)
+          });
+          if (v == 1){
+            markerDiv.setBackground(this.createKeypointStripedBackgroundStyle(keypoint_color));
+          }
+
+          // Create marker
+          marker = L.marker(latlng, {icon : markerDiv, draggable: true});
+
+          // Map will "follow" where you drag the marker
+          let map = this.leafletMap;
+          let self = this;
+          marker.on('dragend', function(event){
+            var marker = event.target;
+            var position = marker.getLatLng();
+
+            // Make sure marker remains inside image bounds
+            let pt = self.extractKeypoint(marker);
+            self.setKeypointXY(annotationIndex, index/3, pt[0], pt[1]);
+
+            let new_x = pt[0] * ratio;
+            let new_y = pt[1] * ratio;
+            let new_position = map.unproject([new_x, new_y], 0);
+
+            console.log(new_x);
+            console.log(new_y);
+            console.log(pt[0]);
+
+            // set new marker position and move camera there
+            marker.setLatLng(new L.LatLng(new_position.lat, new_position.lng),{draggable:'true'});
+            // pan to new position
+            // map.panTo(new L.LatLng(new_position.lat, new_position.lng))
+          });
+          marker.bindTooltip(keypoint_name, {
+            className : '',
+            direction : 'auto'
+          });
+
+          marker.on('click', function(event) {
+            self.handleClick(index/3)
+          })
+
+          this.addLayer(marker);
+
+        }
+
+        layers['keypoints'].push(marker);
+
+      }
+
+      if (this.showingSkeleton) {
+        this.drawSkeletonForLayer(layers);
+      }
+
+    }
+
+    return layers;
+
+  }
 
   setAnnotations(annotations, categories, keypointStyleIdx=null) {
 
@@ -421,7 +509,9 @@ class LeafletAnnotation {
             let layer = annotation_layer.keypoints[i];
             this.removeLayer(layer);
         }
-          }
+      }
+
+      this.clearSkeleton();      
     }
 
     this.annotation_layers = [];
@@ -534,6 +624,10 @@ class LeafletAnnotation {
 
       if (this.keypointModCallback != null) {
         this.keypointModCallback(keypointIdx);
+      }
+
+      if (this.showingSkeleton) {
+        this.drawSkeleton();
       }
     }
 

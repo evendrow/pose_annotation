@@ -2,6 +2,7 @@ html, body {
   margin: 0px;
   padding: 0px;
   background-color: #f6f6f6;
+  font-family: sans-serif;
 }
 
 
@@ -9,6 +10,7 @@ html, body {
   text-align: center;
 }
 #container {
+  position: relative;
   display: inline-block;
   width: 95%;
   max-width: 1200px;
@@ -58,10 +60,10 @@ html, body {
   box-shadow: 0 0 0 2px #000000;
 
   /* Override leaflet-marker stuff */
-  height: 10px !important;
-  width: 10px !important;
-  margin-left: -5px !important;
-  margin-top: -5px !important;
+  height: 8px !important;
+  width: 8px !important;
+  margin-left: -4px !important;
+  margin-top: -4px !important;
 }
 
 
@@ -298,4 +300,11 @@ row.keypoint {
   font-size: .825rem;
   line-height: 1.5;
   border-radius: .2rem;
+}
+
+#version {
+  position: absolute;
+  bottom: 0px;
+  right: 4px;
+  font-size: 14px;
 }

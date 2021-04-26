@@ -151,6 +151,10 @@
                   <button onclick="do_copy()" id="copy_button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-copy"></i> Copy</button>
                   <button onclick="do_paste()" id="paste_button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-paste"></i> Paste</button>
                 </div>
+                &nbsp; &nbsp;
+                <div class="btn-group btn-group-xs" role="group">
+                  <button onclick="show_skeleton()" id="skeleton_button" class="btn btn-secondary btn-sm"><i class="fas fa-child"></i> Skeleton</button>
+                </div>
               </div>
               <div class="row center_row">
                 
@@ -244,7 +248,10 @@
         <button onclick="save()" class="btn btn-secondary btn-lg">
             <span class="far fa-save" aria-hidden="true"></span>&nbsp;Save
             <!-- <span class="fa fa-arrow-right fa-md" aria-hidden="true"></span> -->
-          </button>
+        </button>
+      </div>
+      <div id="version">
+        vX.XX
       </div>
     </div>
   </div>
@@ -408,6 +415,10 @@ var save = function() {
 
 var mark_frame_edited = function() {
   jrdb.toggle_frame_edited();
+}
+
+var show_skeleton = function() {
+  jrdb.toggle_skeleton();
 }
 
 document.addEventListener('keydown', function (event) {

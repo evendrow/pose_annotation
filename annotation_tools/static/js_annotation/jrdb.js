@@ -3,6 +3,8 @@ class JRDBAnnotator {
 
   constructor(scene, leafletClassStiched, leafletClassSingle) {
 
+    this.VERSION = "0.1";
+
     this.scene = scene
 
     this.LOAD_ALL_DATA = true;
@@ -14,6 +16,8 @@ class JRDBAnnotator {
     this.trackIdx = 0;
     this.keypointIdx = -1;
     this.selectedKeypointIdx = 0;
+
+    this.show_skeleton = true;
 
     this.copiedPoints = null;
     this.copiedDifficulty = null;
@@ -50,6 +54,7 @@ class JRDBAnnotator {
     this.leaflet = new LeafletAnnotation(leafletClassStiched);
     this.leaflet.create();
 
+    this.leaflet.setShowingSkeleton(this.show_skeleton);
     this.leaflet.setKeypointModifiedCallback(this.leafletModifedCallback);
     this.leaflet.setKeypointClickCallback(this.leafletClickCallback);
 
@@ -106,7 +111,7 @@ class JRDBAnnotator {
     // this.leaflet.setImage(image);
 
 
-    
+    $("#version").html("v"+this.VERSION);
   }
 
   message(msg) {
@@ -651,6 +656,16 @@ class JRDBAnnotator {
     }
     
     this.message("Changed selection. Currently selecting " + selectedIndexes.length + " points.")
+  }
+
+  // <================ Skeleton displayed?
+  toggle_skeleton() {
+    this.show_skeleton = !this.show_skeleton;
+
+    $("#skeleton_button").toggleClass('btn-secondary', this.show_skeleton);
+    $("#skeleton_button").toggleClass('btn-outline-secondary', !this.show_skeleton);
+
+    this.leaflet.setShowingSkeleton(this.show_skeleton);
   }
 
   // <================ Human-edited label
