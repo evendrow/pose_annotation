@@ -185,7 +185,19 @@
 
         <!-- <p id="frameInfo">Frame: <span id="frameNum">0</span></p> -->
 
-        <div class="btn-group btn-group-lg" role="group">
+        &nbsp;&nbsp;&nbsp;&nbsp;
+
+        <div class="btn-group btn-group-md" role="group">
+          <button onclick="lighten()" id="lightButton" class="btn btn-outline-secondary">
+            <i class="fas fa-sun"></i>
+            Lighten
+            <!-- <span class="fa fa-arrow-right fa-md" aria-hidden="true"></span> -->
+          </button>
+        </div>
+
+        &nbsp;&nbsp;&nbsp;&nbsp;
+
+        <div class="btn-group btn-group-md" role="group">
           <button onclick="prev_image(50)" class="btn btn-outline-secondary smaller_btn">
             <i class="fas fa-angle-left"></i> 
             50
@@ -229,7 +241,7 @@
 
         &nbsp;&nbsp;&nbsp;&nbsp;
 
-        <div class="btn-group btn-group-lg" role="group">
+        <div class="btn-group btn-group-md" role="group">
           <button onclick="play()" id="playButton" class="btn btn-outline-secondary">
             <span class="fas fa-play" aria-hidden="true"></span> 
             Play
@@ -245,7 +257,7 @@
 
         &nbsp;&nbsp;&nbsp;&nbsp;
 
-        <button onclick="save()" class="btn btn-secondary btn-lg">
+        <button onclick="save()" class="btn btn-secondary btn-md">
             <span class="far fa-save" aria-hidden="true"></span>&nbsp;Save
             <!-- <span class="fa fa-arrow-right fa-md" aria-hidden="true"></span> -->
         </button>
@@ -421,6 +433,10 @@ var show_skeleton = function() {
   jrdb.toggle_skeleton();
 }
 
+var lighten = function() {
+  jrdb.toggleBrightness();
+}
+
 document.addEventListener('keydown', function (event) {
 
   // Prevent boostrap radio button from being modified by arrow keys
@@ -454,6 +470,14 @@ document.addEventListener('keydown', function (event) {
   }
   if (event.key == 'z') {
     focusOnAnnotation();
+  }
+
+  if (event.key == 'c') {
+    do_copy();
+  }
+
+  if (event.key == 'v') {
+    do_paste();
   }
 
   if (event.key == ',') {

@@ -3,21 +3,26 @@ html, body {
   padding: 0px;
   background-color: #f6f6f6;
   font-family: sans-serif;
+  width: 100%;
+  height: 100%;
 }
 
 
 #center {
   text-align: center;
+  box-sizing: border-box;
+  padding: 10px
 }
+
 #container {
   position: relative;
   display: inline-block;
-  width: 95%;
-  max-width: 1200px;
+  width: 100%;
+  /*max-width: 1200px;*/
   text-align: center;
   padding: 10px 30px 20px;
   background-color: white;
-  margin-top: 20px;
+  /*margin-top: 20px;*/
   
   /* box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23); */
   box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
@@ -250,11 +255,11 @@ row.keypoint {
 .smaller_btn {
   padding-left: 10px !important;
   padding-right: 10px !important;
-  font-size: 18px !important;
+  /*font-size: 18px !important;*/
 }
 
 #playButton {
-  width: 110px;
+  width: 80px;
 }
 
 .flex_row {
@@ -307,4 +312,8 @@ row.keypoint {
   bottom: 0px;
   right: 4px;
   font-size: 14px;
+}
+
+.light {
+  filter: brightness(4);
 }

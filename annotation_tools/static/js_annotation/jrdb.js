@@ -18,6 +18,7 @@ class JRDBAnnotator {
     this.selectedKeypointIdx = 0;
 
     this.show_skeleton = true;
+    this.lighten = false;
 
     this.copiedPoints = null;
     this.copiedDifficulty = null;
@@ -666,6 +667,16 @@ class JRDBAnnotator {
     $("#skeleton_button").toggleClass('btn-outline-secondary', !this.show_skeleton);
 
     this.leaflet.setShowingSkeleton(this.show_skeleton);
+  }
+
+  // Lightness
+  toggleBrightness() {
+    this.lighten = !this.lighten;
+    $("#"+this.leaflet.leafletClass).toggleClass('light', this.lighten);
+    $("#"+this.leaflet_single.leafletClass).toggleClass('light', this.lighten);
+
+    $("#lightButton").toggleClass('btn-secondary', this.lighten);
+    $("#lightButton").toggleClass('btn-outline-secondary', !this.lighten);
   }
 
   // <================ Human-edited label
