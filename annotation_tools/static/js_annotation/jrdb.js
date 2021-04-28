@@ -3,7 +3,7 @@ class JRDBAnnotator {
 
   constructor(scene, leafletClassStiched, leafletClassSingle) {
 
-    this.VERSION = "0.1";
+    this.VERSION = "0.2";
 
     this.scene = scene
 
