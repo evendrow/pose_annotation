@@ -257,6 +257,16 @@
 
         &nbsp;&nbsp;&nbsp;&nbsp;
 
+        <div class="btn-group btn-group-md" role="group">
+          <button onclick="goToUnedited()" id="firstUneditedButton" class="btn btn-outline-secondary">
+            <i class="fas fa-step-forward"></i>
+            First Unfinished
+            <!-- <span class="fa fa-arrow-right fa-md" aria-hidden="true"></span> -->
+          </button>
+        </div>
+
+        &nbsp;&nbsp;&nbsp;&nbsp;
+
         <button onclick="save()" class="btn btn-secondary btn-md">
             <span class="far fa-save" aria-hidden="true"></span>&nbsp;Save
             <!-- <span class="fa fa-arrow-right fa-md" aria-hidden="true"></span> -->
@@ -435,6 +445,10 @@ var show_skeleton = function() {
 
 var lighten = function() {
   jrdb.toggleBrightness();
+}
+
+var goToUnedited = function() {
+  jrdb.goToFirstUneditedFrame();
 }
 
 document.addEventListener('keydown', function (event) {

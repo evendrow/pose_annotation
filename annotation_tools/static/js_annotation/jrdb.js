@@ -672,8 +672,9 @@ class JRDBAnnotator {
   // Lightness
   toggleBrightness() {
     this.lighten = !this.lighten;
-    $("#"+this.leaflet.leafletClass).toggleClass('light', this.lighten);
-    $("#"+this.leaflet_single.leafletClass).toggleClass('light', this.lighten);
+    // $("#"+this.leaflet.leafletClass).toggleClass('light', this.lighten);
+    // $("#"+this.leaflet_single.leafletClass).toggleClass('light', this.lighten);
+    $(".leaflet-image-layer").toggleClass('light', this.lighten);
 
     $("#lightButton").toggleClass('btn-secondary', this.lighten);
     $("#lightButton").toggleClass('btn-outline-secondary', !this.lighten);
@@ -976,6 +977,18 @@ class JRDBAnnotator {
       this.frameIdx = this.data.annotations_list.length-1;
     }
     this.refreshAll(callback);
+  }
+
+  goToFirstUneditedFrame() {
+    for (var i = 0; i < this.data.annotations_list.length; i++) {
+      let frame = this.data.annotations_list[i];
+      let person = frame.find(a => a['track_id'] == this.trackList[this.trackIdx]);  
+      if (person != null && person.human_edited == false) {
+        this.frameIdx = i;
+        this.refreshAll();
+        break;
+      }
+    }
   }
 
   togglePlaying(doneCallback) {
