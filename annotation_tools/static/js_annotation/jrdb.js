@@ -763,6 +763,7 @@ class JRDBAnnotator {
   updateDifficulty() {
     var difficulty = this.getDifficulty();
     this.setDifficulty(difficulty);
+    this.showDifficulty(d);
   }
 
   // Sets selected difficutly option in buttons
@@ -776,7 +777,20 @@ class JRDBAnnotator {
     $("input[name='difficulty']").parent('.btn').removeClass('active');
     $("input[name='difficulty']").parent('.btn').prop('checked', false);
     $("#diff_"+diffs[d]).parent('.btn').addClass('active');
-    $("#diff_"+diffs[d]).parent('.btn').prop('checked', true)
+    $("#diff_"+diffs[d]).parent('.btn').prop('checked', true);
+
+
+    // Update entire keypoints list
+    var person = this.get_current_annotation();
+
+    for (var i = 0; i < person.difficulty.length; i++) {
+      $("#diff_group_keypoints_id_"+i).children('button').removeClass('active');
+
+      d = person.difficulty[i];
+      if (d == -1) { d = diffs.length-1; }
+
+      $("#diff_"+diffs[d]+"_keypoints_id_"+i).addClass('active');
+    }
   }
 
   // <================ Visibility
@@ -811,6 +825,7 @@ class JRDBAnnotator {
   updateVisibility() {
     var visibility = this.getVisibility();
     this.setVisibility(visibility);
+    this.showVisibility(visibility);
   }
 
   // Sets selected visibility option in buttons
@@ -824,7 +839,19 @@ class JRDBAnnotator {
     $("input[name='visibility']").parent('.btn').removeClass('active');
     $("input[name='visibility']").parent('.btn').prop('checked', false);
     $("#vis_"+vis[v]).parent('.btn').addClass('active');
-    $("#vis_"+vis[v]).parent('.btn').prop('checked', true)
+    $("#vis_"+vis[v]).parent('.btn').prop('checked', true);
+
+    // Update entire keypoints list
+    var person = this.get_current_annotation();
+
+    for (var i = 0; i < person.difficulty.length; i++) {
+      $("#vis_group_keypoints_id_"+i).children('button').removeClass('active');
+
+      v = person.visibility[i];
+      if (v == -1) { v = vis.length-1; }
+
+      $("#vis_"+vis[v]+"_keypoints_id_"+i).addClass('active');
+    }
   }
 
   // <================ UI
@@ -853,34 +880,94 @@ class JRDBAnnotator {
             <p>`+key+`</p>
           </div>
           <div class="button">
-            <div class="btn-group btn-group-xs" role="group">
-              <button class="btn btn-outline-secondary" id="zoom_`+id+`">
-                <i class="fas fa-compress"></i> 
-                Zoom
+            <div class="btn-group btn-group-xs" role="group" id="diff_group_`+id+`">
+              <button class="btn btn-outline-secondary" id="diff_easy_`+id+`">
+                E
               </button>
-              <button class="btn btn-outline-secondary" id="isolate_`+id+`">
-                <i class="far fa-dot-circle"></i>
-                Kalman
+              <button class="btn btn-outline-secondary" id="diff_med_`+id+`">
+                M
+              </button>
+              <button class="btn btn-outline-secondary" id="diff_hard_`+id+`">
+                H
+              </button>
+              <button class="btn btn-outline-secondary" id="diff_impossible_`+id+`">
+                I
+              </button>
+              <button class="btn btn-outline-secondary" id="diff_na_`+id+`">
+                N/A
+              </button>
+            </div>
+            &nbsp; &nbsp;
+            <div class="btn-group btn-group-xs" role="group" id="vis_group_`+id+`">
+              <button class="btn btn-outline-secondary" id="vis_visible_`+id+`">
+                V
+              </button>
+              <button class="btn btn-outline-secondary" id="vis_occluded_`+id+`">
+                O
+              </button>
+              <button class="btn btn-outline-secondary" id="vis_na_`+id+`">
+                N/A
               </button>
             </div>
           </div>
         </div>
       `);
 
+              // <button class="btn btn-outline-secondary" id="zoom_`+id+`">
+              //   <i class="fas fa-compress"></i> 
+              //   Zoom
+              // </button>
+              // <button class="btn btn-outline-secondary" id="isolate_`+id+`">
+              //   <i class="far fa-dot-circle"></i>
+              //   Kalman
+              // </button>
+
       $("#select_"+id).click(function() {
         let idx = parseInt(this.id.split("_")[3]);
         self.setSelectedKeypointIdx(idx);
       });
 
-      $("#isolate_"+id).click(function() {
-        let idx = parseInt(this.id.split("_")[3]);
-        self.applyKalmanFilter(idx);
+      // $("#isolate_"+id).click(function() {
+      //   let idx = parseInt(this.id.split("_")[3]);
+      //   self.applyKalmanFilter(idx);
+      // });
+
+      // $("#zoom_"+id).click(function() {
+      //   let idx = parseInt(this.id.split("_")[3]);
+      //   console.log("focusing on marker " + idx);
+      //   self.focusOnMarker(idx);
+      // });
+
+      $("#diff_group_"+id).children().click(function() {
+        let diff_id = this.id.split("_")[1];
+        let idx = parseInt(this.id.split("_")[4]);
+        
+        let diffs = ["easy", "med", "hard", "impossible", "na"]; 
+
+        var d = diffs.indexOf(diff_id);
+        if (d == -1) {
+          d = diffs.length-1;
+        }
+
+        self.setSelectedKeypointIdx(idx);
+        self.setDifficulty(d);
+        self.showDifficulty(d)
       });
 
-      $("#zoom_"+id).click(function() {
-        let idx = parseInt(this.id.split("_")[3]);
-        console.log("focusing on marker " + idx);
-        self.focusOnMarker(idx);
+      $("#vis_group_"+id).children().click(function() {
+        let vis_id = this.id.split("_")[1];
+        let idx = parseInt(this.id.split("_")[4]);
+        
+        let vis = ["visible", "occluded", "na"]; 
+
+        var v = vis.indexOf(vis_id);
+        if (v == -1) {
+          v = vis.length-1;
+        }
+
+        self.setSelectedKeypointIdx(idx);
+        self.setVisibility(v);
+        self.showVisibility(v)
       });
     }
 
