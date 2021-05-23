@@ -65,7 +65,7 @@ class JRDBAnnotator {
 
     if (!this.SHOW_UNSTICHED_VIEW) {
       $('#'+leafletClassSingle).css('display', 'none');
-      $('#'+leafletClassStiched).css('height', '600px');
+      $('#'+leafletClassStiched).css('height', '100%');
     }
 
     // Initialize stich
@@ -421,6 +421,36 @@ class JRDBAnnotator {
     }
 
     this.message("Pasted all keypoints.");
+  }
+
+  performCopyDiffVis() {
+    var difficulty = this.getDifficulty();
+    let frame = this.data.annotations_list[this.frameIdx];
+    let person = frame.find(a => a['track_id'] == this.trackList[this.trackIdx]);
+    if (person != null) {
+      this.copiedVisibility = person.visibility.map((x) => x); // clone
+      this.copiedDifficulty = person.difficulty.map((x) => x); // clone
+    }
+
+    this.message("Copied difficulty and visibility for all points.");
+    
+  }
+
+  performPasteDiffVis() {
+    if (this.copiedDifficulty == null) {
+      alert('Nothing copied.');
+    } else {
+      let frame = this.data.annotations_list[this.frameIdx];
+      let person = frame.find(a => a['track_id'] == this.trackList[this.trackIdx]);
+      if (person != null) {
+        // set contents to a clone of the copies points
+        person.difficulty = this.copiedDifficulty.map((x) => x);
+        person.visibility = this.copiedVisibility.map((x) => x);
+        this.refreshAll(); 
+      }
+    }
+
+    this.message("Pasted difficulty and visibility for all points.");
   }
 
   setKeypointIdx(idx) {

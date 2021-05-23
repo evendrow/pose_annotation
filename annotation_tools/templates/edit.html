@@ -50,8 +50,8 @@
       <!-- <canvas id="canvas" width=800 height=600></canvas> -->
       <div class="row" id="annotationcontainer">
         <div id="mapcontainer">
-          <div id="map_stiched" style="width: 100%; height: 300px;"></div>
-          <div id="map_single" style="width: 100%; height: 300px;"></div>
+          <div id="map_stiched" style="width: 100%; height: 50%;"></div>
+          <div id="map_single" style="width: 100%; height: 50%;"></div>
         </div>
         <div id="annotations">
           <div id="frame_info">
@@ -154,6 +154,12 @@
                 &nbsp; &nbsp;
                 <div class="btn-group btn-group-xs" role="group">
                   <button onclick="show_skeleton()" id="skeleton_button" class="btn btn-secondary btn-sm"><i class="fas fa-child"></i> Skeleton</button>
+                </div>
+              </div>
+              <div class="row center_row">
+                <div class="btn-group btn-group-xs" role="group">
+                  <button onclick="do_copy_diff_vis()" id="copy_button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-copy"></i> Copy Diff &amp; Vis</button>
+                  <button onclick="do_paste_diff_vis()" id="paste_button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-paste"></i> Paste Diff &amp; Vis</button>
                 </div>
               </div>
               <div class="row center_row">
@@ -424,6 +430,14 @@ var do_copy = function() {
 
 var do_paste = function() {
   jrdb.performPaste();
+};
+
+var do_copy_diff_vis = function() {
+  jrdb.performCopyDiffVis();
+};
+
+var do_paste_diff_vis = function() {
+  jrdb.performPasteDiffVis();
 };
 
 var save = function() {
