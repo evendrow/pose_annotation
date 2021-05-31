@@ -508,6 +508,10 @@ document.addEventListener('keydown', function (event) {
     do_copy();
   }
 
+  if (event.key == 'h') {
+    mark_frame_edited();
+  }
+
   if (event.key == 'v') {
     do_paste();
   }
